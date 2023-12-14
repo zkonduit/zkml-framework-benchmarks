@@ -2,3 +2,9 @@
 *.ipynb_checkpoints
 tree_model_bytes.json
 tree_model_data_bytes.json
+*.pf
+*.pk
+*.vk
+*.compiled
+*settings.json
+*witness.json

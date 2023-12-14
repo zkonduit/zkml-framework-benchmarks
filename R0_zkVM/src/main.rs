@@ -14,10 +14,9 @@
 
 use risc0_zkvm::{default_prover, ExecutorEnv};
 use serde_json;
-use smartcore::{
-    linalg::basic::matrix::DenseMatrix, linear::linear_regression::LinearRegression;,
-};
-use smartcore_ml_methods::ML_TEMPLATE_ELF;
+use smartcore::{linalg::basic::matrix::DenseMatrix, linear::linear_regression::LinearRegression};
+use smartcore_ml_methods::ZKML_GUEST_ELF;
+use std::time::Instant;
 
 // The serialized trained model and input data are embedded from files
 // corresponding paths listed below. Alternatively, the model can be trained in
@@ -25,8 +24,8 @@ use smartcore_ml_methods::ML_TEMPLATE_ELF;
 // this approach is desired, be sure to import the corresponding SmartCore
 // modules and serialize the model and data to byte arrays before transfer to
 // the guest.
-const JSON_MODEL: &str = include_str!("../../linear_regression/tree_model_bytes.json");
-const JSON_DATA: &str = include_str!("../../linear_regression/tree_model_data_bytes.json");
+const JSON_MODEL: &str = include_str!("../tree_model_bytes.json");
+const JSON_DATA: &str = include_str!("../tree_model_data_bytes.json");
 
 fn main() {
     let output = predict();
@@ -35,7 +34,6 @@ fn main() {
 }
 
 fn predict() -> (Vec<u32>, std::time::Duration) {
-
     // Convert the model and input data from JSON into byte arrays.
     let model_bytes: Vec<u8> = serde_json::from_str(JSON_MODEL).unwrap();
     let data_bytes: Vec<u8> = serde_json::from_str(JSON_DATA).unwrap();
@@ -65,38 +63,20 @@ fn predict() -> (Vec<u32>, std::time::Duration) {
 
     // This initiates a session, runs the STARK prover on the resulting exection
     // trace, and produces a receipt.
-    let start_time = instant::Instant::now();
-    let receipt = prover.prove(env, ML_TEMPLATE_ELF).unwrap();
-
+    let start_time = Instant::now();
+    let receipt = prover.prove_elf(env, ZKML_GUEST_ELF).unwrap();
+    let proving_time = start_time.elapsed();
     // We read the result that the guest code committed to the journal. The
     // receipt can also be serialized and sent to a verifier.
-    (receipt.journal.decode().unwrap(), start_time.elapsed())
+    (receipt.journal.decode().unwrap(), proving_time)
 }
 
-// TODO: Add tests
-
-// #[cfg(test)]
-// mod test {
-//     use risc0_zkvm::{default_executor, ExecutorEnv};
-//     use smartcore::{
-//         linalg::basic::matrix::DenseMatrix,
-//         svm::{
-//             svc::{SVCParameters, SVC},
-//             Kernels,
-//         },
-//     };
-//     use smartcore_ml_methods::ML_TEMPLATE_ELF;
-//     #[test]
-//     fn basic() {
-//         const EXPECTED: &[u32] = &[
-//             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-//             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1,
-//             1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-//             1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-//             2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-//             2, 2, 2, 2, 2,
-//         ];
-//         let result = super::predict();
-//         assert_eq!(EXPECTED, result);
-//     }
-// }
+#[cfg(test)]
+mod test {
+    #[test]
+    fn basic() {
+        const EXPECTED: &[u32] = &[3];
+        let result = super::predict();
+        assert_eq!(EXPECTED, result.0);
+    }
+}

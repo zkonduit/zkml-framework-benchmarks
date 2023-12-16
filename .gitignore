@@ -8,3 +8,4 @@ tree_model_data_bytes.json
 *.compiled
 *settings.json
 *witness.json
+*.env

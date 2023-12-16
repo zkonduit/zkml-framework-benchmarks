@@ -18,3 +18,13 @@ cuda = ["risc0-zkvm/cuda"]
 default = []
 metal = ["risc0-zkvm/metal"]
 prove = ["risc0-zkvm/prove"]
+
+[dev-dependencies]
+criterion = {version = "0.3",  features = ["html_reports"]}
+tempfile = "3.3.0"
+lazy_static = "1.4.0"
+mnist = "0.5"
+seq-macro = "0.3.1"
+test-case = "2.2.2"
+tempdir = "0.3.7"
+shellexpand = "3.1.0"

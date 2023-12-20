@@ -14,7 +14,6 @@ mod benchmarking_tests {
     lazy_static! {
         static ref CARGO_TARGET_DIR: String =
             var("CARGO_TARGET_DIR").unwrap_or_else(|_| "./R0_zkVM/target".to_string());
-        static ref ANVIL_URL: String = "http://localhost:3030".to_string();
     }
 
     fn start_anvil(limitless: bool) -> Child {

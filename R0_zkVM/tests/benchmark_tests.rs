@@ -8,6 +8,7 @@ mod benchmarking_tests {
     use tempdir::TempDir;
     static COMPILE: Once = Once::new();
     static ENV_SETUP: Once = Once::new();
+    static BENCHMARK_FILE: Once = Once::new();
 
     // Sure to run this once
 
@@ -32,6 +33,16 @@ mod benchmarking_tests {
         child
     }
 
+    fn create_benchmark_json_file() {
+        BENCHMARK_FILE.call_once(|| {
+            let status = Command::new("bash")
+                .args(["benchmark_file.sh"])
+                .status()
+                .expect("failed to execute process");
+            assert!(status.success());
+        });
+    }
+
     fn setup_py_env() {
         ENV_SETUP.call_once(|| {
             // supposes that you have a virtualenv called .env and have run the following
@@ -48,6 +59,7 @@ mod benchmarking_tests {
                     "onnx==1.14.0",
                     "hummingbird-ml==0.4.9",
                     "torch==2.0.1",
+                    "jupyter==1.0.0",
                 ])
                 .status()
                 .expect("failed to execute process");
@@ -69,21 +81,23 @@ mod benchmarking_tests {
     }
 
     fn mv_test_(test_dir: &str, test: &str) {
-        let path: std::path::PathBuf = format!("{}/{}", test_dir, test).into();
-        if !path.exists() {
+        let source_path = format!("./notebooks/{}", test);
+        let destination_path = format!("{}/{}", test_dir, test);
+
+        // Check if the destination directory already exists
+        let dest_path: std::path::PathBuf = destination_path.clone().into();
+        if !dest_path.exists() {
+            // Copy the entire directory in one go
             let status = Command::new("cp")
-                .args([
-                    "-R",
-                    &format!("./notebooks/linear_regressions/{}", test),
-                    &format!("{}/{}", test_dir, test),
-                ])
+                .args(["-R", &source_path, &destination_path])
                 .status()
                 .expect("failed to execute process");
+
             assert!(status.success());
         }
     }
 
-    const TESTS: [&str; 2] = ["ezkl.ipynb", "riscZero.ipynb"];
+    const TESTS: [&str; 1] = ["linear_regressions"];
 
     macro_rules! test_func {
     () => {
@@ -99,12 +113,13 @@ mod benchmarking_tests {
             #(#[test_case(TESTS[N])])*
             fn run_notebook_(test: &str) {
                 crate::benchmarking_tests::init_binary();
+                crate::benchmarking_tests::create_benchmark_json_file();
                 let limitless = false;
                 let mut anvil_child = crate::benchmarking_tests::start_anvil(limitless);
                 let test_dir: TempDir = TempDir::new("nb").unwrap();
                 let path = test_dir.path().to_str().unwrap();
                 crate::benchmarking_tests::mv_test_(path, test);
-                run_notebook(path, test);
+                run_notebooks(path, test);
                 test_dir.close().unwrap();
                 anvil_child.kill().unwrap();
             }
@@ -113,23 +128,33 @@ mod benchmarking_tests {
     };
 }
 
-    fn run_notebook(test_dir: &str, test: &str) {
-        // activate venv
-        let status = Command::new("bash")
-            .arg("-c")
-            .arg("source .env/bin/activate")
-            .status()
-            .expect("failed to execute process");
-        assert!(status.success());
+    fn run_notebooks(test_dir: &str, test: &str) {
+        // Define the path to the Python interpreter in the virtual environment
+        let python_interpreter = ".env/bin/python";
 
-        let path: std::path::PathBuf = format!("{}/{}", test_dir, test).into();
-        let status = Command::new("jupyter")
+        // Replace the 'source .env/bin/activate' with direct python interpreter call
+        let status = Command::new(python_interpreter)
             .args([
+                "-m",
+                "jupyter",
                 "nbconvert",
                 "--to",
                 "notebook",
                 "--execute",
-                (path.to_str().unwrap()),
+                &format!("{}/{}/{}", test_dir, test, "ezkl.ipynb"),
+            ])
+            .status()
+            .expect("failed to execute process");
+        assert!(status.success());
+        let status = Command::new(python_interpreter)
+            .args([
+                "-m",
+                "jupyter",
+                "nbconvert",
+                "--to",
+                "notebook",
+                "--execute",
+                &format!("{}/{}/{}", test_dir, test, "riscZero.ipynb"),
             ])
             .status()
             .expect("failed to execute process");

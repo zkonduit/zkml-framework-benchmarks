@@ -55,10 +55,8 @@ jobs:
           locked: true
       - name: Install solc
         run: (hash svm 2>/dev/null || cargo install svm-rs) && svm install 0.8.20 && solc --version
-      - name: Install Anvil
-        run: cargo install --git https://github.com/foundry-rs/foundry --rev 95a93cd397f25f3f8d49d2851eb52bc2d52dd983 --profile local --locked anvil --force
       - name: Setup Virtual Env and Install python dependencies
-        run: python -m venv .env; source .env/bin/activate; pip install -r requirements.txt;
+        run: python -m venv .env; source .env/bin/activate;
       # - name: authenticate-kaggle-cli
       #   shell: bash
       #   env:
@@ -69,4 +67,4 @@ jobs:
       #     echo $KAGGLE_API_KEY > /home/ubuntu/.kaggle/kaggle.json
       #     chmod 600 /home/ubuntu/.kaggle/kaggle.json
       - name: All notebooks
-        run: source .env/bin/activate; cargo nextest run benchmarking_tests::tests::run_notebook_ --test-threads 1 
+        run: source .env/bin/activate; cargo nextest run benchmarking_tests::tests::run_benchmarks_ --test-threads 1

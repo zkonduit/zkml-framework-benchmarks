@@ -3,34 +3,18 @@ mod benchmarking_tests {
 
     use lazy_static::lazy_static;
     use std::env::var;
-    use std::process::{Child, Command};
+    use std::process::Command;
     use std::sync::Once;
-    use tempdir::TempDir;
     static COMPILE: Once = Once::new();
     static ENV_SETUP: Once = Once::new();
     static BENCHMARK_FILE: Once = Once::new();
+    use regex::Regex;
 
     // Sure to run this once
 
     lazy_static! {
         static ref CARGO_TARGET_DIR: String =
             var("CARGO_TARGET_DIR").unwrap_or_else(|_| "./R0_zkVM/target".to_string());
-    }
-
-    fn start_anvil(limitless: bool) -> Child {
-        let mut args = vec!["-p", "3030"];
-        if limitless {
-            args.push("--code-size-limit=41943040");
-            args.push("--disable-block-gas-limit");
-        }
-        let child = Command::new("anvil")
-            .args(args)
-            // .stdout(Stdio::piped())
-            .spawn()
-            .expect("failed to start anvil process");
-
-        std::thread::sleep(std::time::Duration::from_secs(3));
-        child
     }
 
     fn create_benchmark_json_file() {
@@ -80,53 +64,30 @@ mod benchmarking_tests {
         });
     }
 
-    fn mv_test_(test_dir: &str, test: &str) {
-        let source_path = format!("./notebooks/{}", test);
-        let destination_path = format!("{}/{}", test_dir, test);
-
-        // Check if the destination directory already exists
-        let dest_path: std::path::PathBuf = destination_path.clone().into();
-        if !dest_path.exists() {
-            // Copy the entire directory in one go
-            let status = Command::new("cp")
-                .args(["-R", &source_path, &destination_path])
-                .status()
-                .expect("failed to execute process");
-
-            assert!(status.success());
-        }
-    }
-
     const TESTS: [&str; 1] = ["linear_regressions"];
 
     macro_rules! test_func {
-    () => {
-        #[cfg(test)]
-        mod tests {
-            use seq_macro::seq;
-            use crate::benchmarking_tests::TESTS;
-            use test_case::test_case;
-            use super::*;
+        () => {
+            #[cfg(test)]
+            mod tests {
+                use seq_macro::seq;
+                use crate::benchmarking_tests::TESTS;
+                use test_case::test_case;
+                use super::*;
 
-            seq!(N in 0..=0 {
+                seq!(N in 0..=0 {
 
-            #(#[test_case(TESTS[N])])*
-            fn run_notebook_(test: &str) {
-                crate::benchmarking_tests::init_binary();
-                crate::benchmarking_tests::create_benchmark_json_file();
-                let limitless = false;
-                let mut anvil_child = crate::benchmarking_tests::start_anvil(limitless);
-                let test_dir: TempDir = TempDir::new("nb").unwrap();
-                let path = test_dir.path().to_str().unwrap();
-                crate::benchmarking_tests::mv_test_(path, test);
-                run_notebooks(path, test);
-                test_dir.close().unwrap();
-                anvil_child.kill().unwrap();
+                #(#[test_case(TESTS[N])])*
+                fn run_benchmarks_(test: &str) {
+                    crate::benchmarking_tests::init_binary();
+                    crate::benchmarking_tests::create_benchmark_json_file();
+                    run_notebooks("./notebooks", test);
+                    run_risc0_zk_vm();
+                }
+                });
             }
-            });
-        }
-    };
-}
+        };
+    }
 
     fn run_notebooks(test_dir: &str, test: &str) {
         // Define the path to the Python interpreter in the virtual environment
@@ -159,6 +120,38 @@ mod benchmarking_tests {
             .status()
             .expect("failed to execute process");
         assert!(status.success());
+    }
+
+    fn run_risc0_zk_vm() {
+        // Run the risc0 smartcore model on the host, then get the proving time
+        let output = Command::new("cargo")
+            .env("RISC0_DEV_MODE", "0") // Set the environment variable
+            .args(&["run", "--release"])
+            .output()
+            .expect("Failed to execute command");
+
+        // You can then print the output or handle it as needed
+        println!("Status: {}", output.status);
+
+        {
+            let output = String::from_utf8_lossy(&output.stdout);
+            // use regex to extract the Proving time
+            let re = Regex::new(r"Proving time: (\d+\.\d+)s").unwrap();
+            let caps = re.captures(&output).unwrap();
+            let proving_time_r0 = caps.get(1).map_or("", |m| m.as_str()).to_string() + "s";
+            // read in benchmarks.json file
+            let benchmarks_json = std::fs::read_to_string("./benchmarks.json").unwrap();
+            let mut benchmarks_json: serde_json::Value =
+                serde_json::from_str(&benchmarks_json).unwrap();
+            benchmarks_json["linear_regressions"]["riscZero"]["provingTime"] =
+                serde_json::Value::String(proving_time_r0);
+            // write to benchmarks.json file
+            std::fs::write(
+                "./benchmarks.json",
+                serde_json::to_string_pretty(&benchmarks_json).unwrap(),
+            )
+            .unwrap();
+        }
     }
 
     test_func!();

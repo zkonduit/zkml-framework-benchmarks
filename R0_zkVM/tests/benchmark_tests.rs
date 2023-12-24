@@ -34,16 +34,20 @@ mod benchmarking_tests {
             // source .env/bin/activate
             // pip install -r requirements.txt
             // maturin develop --release --features python-bindings
+            let python_interpreter = ".env/bin/python";
 
             // now install torch, pandas, numpy, seaborn, jupyter
-            let status = Command::new("pip")
+            let status = Command::new(python_interpreter)
                 .args([
+                    "-m",
+                    "pip",
                     "install",
                     "ezkl==7.0.0",
                     "onnx==1.14.0",
                     "hummingbird-ml==0.4.9",
                     "torch==2.0.1",
                     "jupyter==1.0.0",
+                    "pandas==2.0.3",
                 ])
                 .status()
                 .expect("failed to execute process");
@@ -64,7 +68,7 @@ mod benchmarking_tests {
         });
     }
 
-    const TESTS: [&str; 1] = ["linear_regressions"];
+    const TESTS: [&str; 2] = ["linear_regressions", "decision_trees"];
 
     macro_rules! test_func {
         () => {
@@ -75,15 +79,26 @@ mod benchmarking_tests {
                 use test_case::test_case;
                 use super::*;
 
-                seq!(N in 0..=0 {
+                seq!(N in 0..=1 {
 
-                #(#[test_case(TESTS[N])])*
-                fn run_benchmarks_(test: &str) {
-                    crate::benchmarking_tests::init_binary();
-                    crate::benchmarking_tests::create_benchmark_json_file();
-                    run_notebooks("./notebooks", test);
-                    run_risc0_zk_vm();
-                }
+                    #(#[test_case(TESTS[N])])*
+                    fn run_benchmarks_(test: &str) {
+                        if test == TESTS[0] {
+                            crate::benchmarking_tests::create_benchmark_json_file();
+                        }
+                        crate::benchmarking_tests::init_binary();
+                        // artifact generation and proving happens all in the ezkl notebook
+                        // only artifacts are generated in the risc0 notebook
+                        run_notebooks("./notebooks", test);
+                        // we need to run the risc0 zkVM VM on the host to get the proving time
+                        run_risc0_zk_vm(test);
+                        // when we get to the end of the test, we need to pretty print the benchmarks.json file
+                        if test == TESTS[TESTS.len() - 1] {
+                            let benchmarks_json = std::fs::read_to_string("./benchmarks.json").unwrap();
+                            let benchmarks_json: serde_json::Value = serde_json::from_str(&benchmarks_json).unwrap();
+                            println!("{}", serde_json::to_string_pretty(&benchmarks_json).unwrap());
+                        }
+                    }
                 });
             }
         };
@@ -93,7 +108,6 @@ mod benchmarking_tests {
         // Define the path to the Python interpreter in the virtual environment
         let python_interpreter = ".env/bin/python";
 
-        // Replace the 'source .env/bin/activate' with direct python interpreter call
         let status = Command::new(python_interpreter)
             .args([
                 "-m",
@@ -122,11 +136,11 @@ mod benchmarking_tests {
         assert!(status.success());
     }
 
-    fn run_risc0_zk_vm() {
+    fn run_risc0_zk_vm(test: &str) {
         // Run the risc0 smartcore model on the host, then get the proving time
         let output = Command::new("cargo")
             .env("RISC0_DEV_MODE", "0") // Set the environment variable
-            .args(&["run", "--release"])
+            .args(&["run", "--release", "--", "--model", test])
             .output()
             .expect("Failed to execute command");
 
@@ -143,7 +157,7 @@ mod benchmarking_tests {
             let benchmarks_json = std::fs::read_to_string("./benchmarks.json").unwrap();
             let mut benchmarks_json: serde_json::Value =
                 serde_json::from_str(&benchmarks_json).unwrap();
-            benchmarks_json["linear_regressions"]["riscZero"]["provingTime"] =
+            benchmarks_json[test]["riscZero"]["provingTime"] =
                 serde_json::Value::String(proving_time_r0);
             // write to benchmarks.json file
             std::fs::write(

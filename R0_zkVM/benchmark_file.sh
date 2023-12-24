@@ -20,11 +20,16 @@ for subdir in "$notebooks_dir"/*; do
             if [[ -f "$notebook" ]]; then
                 notebook_name=$(basename "$notebook" .ipynb)
 
+                # Ignore certain files based on name pattern
+                if [[ "$notebook_name" == *"ezkl.nbconvert"* || "$notebook_name" == *"riscZero.nbconvert"* ]]; then
+                    continue  # Skip the rest of the loop and go to the next iteration
+                fi
+
                 # Add provingTime and verifyTime fields to the notebook object
                 subdir_object=$(jq -n \
                     --arg name "$notebook_name" \
                     --argjson obj "$subdir_object" \
-                    '$obj + {($name): {"provingTime": null, "verifyTime": null}}')
+                    '$obj + {($name): {"provingTime": null}}')
             fi
         done
 

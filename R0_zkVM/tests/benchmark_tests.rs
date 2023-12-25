@@ -48,6 +48,7 @@ mod benchmarking_tests {
                     "torch==2.0.1",
                     "jupyter==1.0.0",
                     "pandas==2.0.3",
+                    "sk2torch==1.2.0",
                 ])
                 .status()
                 .expect("failed to execute process");

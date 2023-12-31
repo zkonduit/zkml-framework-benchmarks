@@ -88,7 +88,10 @@ mod benchmarking_tests {
 
                     #(#[test_case(TESTS[N])])*
                     fn run_benchmarks_(test: &str) {
-                        crate::benchmarking_tests::create_benchmark_json_file();
+                        // if test is the first test, we need to create the benchmarks.json file
+                        if test == TESTS[0] {
+                            crate::benchmarking_tests::create_benchmark_json_file();
+                        }
                         crate::benchmarking_tests::init_binary();
                         // artifact generation and proving happens all in the ezkl notebook
                         // only artifacts are generated in the risc0 notebook

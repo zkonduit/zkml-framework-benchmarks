@@ -55,7 +55,7 @@ jobs:
           locked: true
       - name: Install solc
         run: (hash svm 2>/dev/null || cargo install svm-rs) && svm install 0.8.20 && solc --version
-      - name: Setup Virtual Env and Install python dependencies
+      - name: Setup Virtual Env
         run: python -m venv .env; source .env/bin/activate;
       # - name: authenticate-kaggle-cli
       #   shell: bash

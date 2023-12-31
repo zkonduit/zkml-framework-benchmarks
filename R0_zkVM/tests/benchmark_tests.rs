@@ -69,7 +69,11 @@ mod benchmarking_tests {
         });
     }
 
-    const TESTS: [&str; 2] = ["linear_regressions", "decision_trees"];
+    const TESTS: [&str; 3] = [
+        "linear_regressions",
+        "decision_trees",
+        "svm_classifications",
+    ];
 
     macro_rules! test_func {
         () => {
@@ -80,13 +84,11 @@ mod benchmarking_tests {
                 use test_case::test_case;
                 use super::*;
 
-                seq!(N in 0..=1 {
+                seq!(N in 0..=2 {
 
                     #(#[test_case(TESTS[N])])*
                     fn run_benchmarks_(test: &str) {
-                        if test == TESTS[0] {
-                            crate::benchmarking_tests::create_benchmark_json_file();
-                        }
+                        crate::benchmarking_tests::create_benchmark_json_file();
                         crate::benchmarking_tests::init_binary();
                         // artifact generation and proving happens all in the ezkl notebook
                         // only artifacts are generated in the risc0 notebook
@@ -150,6 +152,7 @@ mod benchmarking_tests {
 
         {
             let output = String::from_utf8_lossy(&output.stdout);
+            println!("Output: {}", output);
             // use regex to extract the Proving time
             let re = Regex::new(r"Proving time: (\d+\.\d+)s").unwrap();
             let caps = re.captures(&output).unwrap();

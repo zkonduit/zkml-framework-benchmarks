@@ -17,11 +17,12 @@ use risc0_zkvm::{default_prover, ExecutorEnv};
 use serde::Serialize;
 use serde_json;
 use smartcore::{
-    linalg::basic::matrix::DenseMatrix, linear::linear_regression::LinearRegression,
+    linalg::basic::matrix::DenseMatrix, linear::linear_regression::LinearRegression, svm::svc::SVC,
     tree::decision_tree_classifier::*,
 };
 use smartcore_ml_methods::DECISION_TREE_ELF;
 use smartcore_ml_methods::LINEAR_REGRESSION_ELF;
+use smartcore_ml_methods::SVM_CLASSIFICATION_ELF;
 use std::time::Instant;
 
 // The serialized trained model and input data are embedded from files
@@ -36,6 +37,11 @@ const MODEL_LINEAR_REGRESSION: &str =
     include_str!("../res/ml-model/linear_regression_model_bytes.json");
 const DATA_LINEAR_REGRESSION: &str =
     include_str!("../res/input-data/linear_regression_data_bytes.json");
+
+const MODEL_SVM_CLASSIFICATION: &str =
+    include_str!("../res/ml-model/svm_classification_model_bytes.json");
+const DATA_SVM_CLASSIFICATION: &str =
+    include_str!("../res/input-data/svm_classification_data_bytes.json");
 
 fn main() {
     let matches = App::new("Model Prover")
@@ -65,7 +71,7 @@ fn main() {
             let model: Model = rmp_serde::from_slice(&model_bytes)
                 .expect("model failed to deserialize byte array");
             let data: DenseMatrix<f64> =
-                rmp_serde::from_slice(&data_bytes).expect("data filed to deserialize byte array");
+                rmp_serde::from_slice(&data_bytes).expect("data failed to deserialize byte array");
             Ok(predict(&model, data, LINEAR_REGRESSION_ELF))
         }
         "decision_trees" => {
@@ -78,12 +84,21 @@ fn main() {
             let model: Model = rmp_serde::from_slice(&model_bytes)
                 .expect("model failed to deserialize byte array");
             let data: DenseMatrix<f64> =
-                rmp_serde::from_slice(&data_bytes).expect("data filed to deserialize byte array");
+                rmp_serde::from_slice(&data_bytes).expect("data failed to deserialize byte array");
             Ok(predict(&model, data, DECISION_TREE_ELF))
         }
-        "logistic_regressions" => {
-            // TODO
-            unimplemented!()
+        "svm_classifications" => {
+            // Convert the model and input data from JSON into byte arrays.
+            let model_bytes: Vec<u8> = serde_json::from_str(MODEL_SVM_CLASSIFICATION).unwrap();
+            let data_bytes: Vec<u8> = serde_json::from_str(DATA_SVM_CLASSIFICATION).unwrap();
+
+            // Deserialize the data from rmp into native rust types.
+            let model: SVC<f64, i32, DenseMatrix<f64>, Vec<i32>> =
+                rmp_serde::from_slice(&model_bytes)
+                    .expect("model failed to deserialize byte array");
+            let data: DenseMatrix<f64> =
+                rmp_serde::from_slice(&data_bytes).expect("data failed to deserialize byte array");
+            Ok(predict(&model, data, SVM_CLASSIFICATION_ELF))
         }
         _ => {
             // return an error if the model type is not recognized
@@ -130,10 +145,11 @@ fn predict<T: Serialize>(
 mod test {
     use smartcore::{
         linalg::basic::matrix::DenseMatrix, linear::linear_regression::LinearRegression,
-        tree::decision_tree_classifier::*,
+        svm::svc::SVC, tree::decision_tree_classifier::*,
     };
     use smartcore_ml_methods::DECISION_TREE_ELF;
     use smartcore_ml_methods::LINEAR_REGRESSION_ELF;
+    use smartcore_ml_methods::SVM_CLASSIFICATION_ELF;
     const MODEL_DECISION_TREE: &str =
         include_str!("../res/ml-model/decision_tree_model_bytes.json");
     const DATA_DECISION_TREE: &str =
@@ -142,6 +158,10 @@ mod test {
         include_str!("../res/ml-model/linear_regression_model_bytes.json");
     const DATA_LINEAR_REGRESSION: &str =
         include_str!("../res/input-data/linear_regression_data_bytes.json");
+    const MODEL_SVM_CLASSIFICATION: &str =
+        include_str!("../res/ml-model/svm_classification_model_bytes.json");
+    const DATA_SVM_CLASSIFICATION: &str =
+        include_str!("../res/input-data/svm_classification_data_bytes.json");
     #[test]
     fn linear_regression() {
         const EXPECTED: &[u32] = &[3];
@@ -154,7 +174,7 @@ mod test {
         let model: Model =
             rmp_serde::from_slice(&model_bytes).expect("model failed to deserialize byte array");
         let data: DenseMatrix<f64> =
-            rmp_serde::from_slice(&data_bytes).expect("data filed to deserialize byte array");
+            rmp_serde::from_slice(&data_bytes).expect("data failed to deserialize byte array");
         let result = super::predict(&model, data, LINEAR_REGRESSION_ELF);
         assert_eq!(EXPECTED, result.0);
     }
@@ -177,8 +197,27 @@ mod test {
         let model: Model =
             rmp_serde::from_slice(&model_bytes).expect("model failed to deserialize byte array");
         let data: DenseMatrix<f64> =
-            rmp_serde::from_slice(&data_bytes).expect("data filed to deserialize byte array");
+            rmp_serde::from_slice(&data_bytes).expect("data failed to deserialize byte array");
         let result = super::predict(&model, data, DECISION_TREE_ELF);
         assert_eq!(EXPECTED, result.0);
+    }
+    #[test]
+    fn svm_classification() {
+        const EXPECTED: &[i32] = &[
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        ];
+
+        let model_bytes: Vec<u8> = serde_json::from_str(MODEL_SVM_CLASSIFICATION).unwrap();
+        let data_bytes: Vec<u8> = serde_json::from_str(DATA_SVM_CLASSIFICATION).unwrap();
+
+        // Deserialize the data from rmp into native rust types.
+        let model: SVC<f64, i32, DenseMatrix<f64>, Vec<i32>> =
+            rmp_serde::from_slice(&model_bytes).expect("model failed to deserialize byte array");
+        let data: DenseMatrix<f64> =
+            rmp_serde::from_slice(&data_bytes).expect("data failed to deserialize byte array");
+        let result = super::predict(&model, data, SVM_CLASSIFICATION_ELF);
+        // convert result.0 to a Vec<i32>
+        let result: Vec<i32> = result.0.iter().map(|x| *x as i32).collect();
+        assert_eq!(EXPECTED, result);
     }
 }

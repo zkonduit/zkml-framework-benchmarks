@@ -15,7 +15,13 @@
 #![no_main]
 
 use risc0_zkvm::guest::env;
-use smartcore::{linalg::basic::matrix::DenseMatrix, smartcore::svm::svc::SVC};
+use smartcore::{
+    linalg::basic::matrix::DenseMatrix,
+    svm::{
+        svc::{SVCParameters, SVC},
+        Kernels,
+    },
+};
 
 risc0_zkvm::guest::entry!(main);
 
@@ -23,14 +29,23 @@ pub fn main() {
     // Read the model from the host into a SmartCore Decesion Tree model object.
     // We MUST explicitly declare the correct type in order for deserialization to be
     // successful.
-    type Model = SVC<f64, i32, DenseMatrix<f64>, Vec<i32>>;
-    let trained_model: Model = env::read();
+    // Read the model from the host into a SmartCore SVC object.
+    let mut model: SVC<f64, i32, DenseMatrix<f64>, Vec<i32>> = env::read();
 
     // Read the input data into a DenseMatrix.
     let x_data: DenseMatrix<f64> = env::read();
 
+    // Calling predict on a deserialized SVM model will result in an error due to the missing parameters field.
+    // We need to use THE EXACT SAME SVCParameters that we used to train the model.  Adjust the code below in accordance with how you trained the SVC model.
+    let params_same = &SVCParameters::default()
+        .with_c(1.0)
+        .with_kernel(Kernels::rbf().with_gamma(0.7));
+
+    // Now we can update the model with params_same.  The RISC Zero fork changes the visibility of the parameters field of the SVC and SVR model structs to public to allow for this reinsertion
+    model.parameters = Some(params_same);
+
     // We call the predict() function on our trained model to perform inference.
-    let y_hat = trained_model.predict(&x_data).unwrap();
+    let y_hat = model.predict(&x_data).unwrap();
 
     // This line is optional and can be commented out, but it's useful to see
     // the output of the computation before the proving step begins.

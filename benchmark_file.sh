@@ -9,6 +9,9 @@ output_file="benchmarks.json"
 # Initialize an empty JSON object
 json_object="{}"
 
+# Array of patterns to exclude
+declare -a exclude_patterns=("ezkl.nbconvert" "riscZero.nbconvert" "orion.nbconvert")
+
 # Iterate over subdirectories in the notebooks directory
 for subdir in "$notebooks_dir"/*; do
     if [[ -d "$subdir" ]]; then
@@ -20,8 +23,16 @@ for subdir in "$notebooks_dir"/*; do
             if [[ -f "$notebook" ]]; then
                 notebook_name=$(basename "$notebook" .ipynb)
 
-                # Ignore certain files based on name pattern
-                if [[ "$notebook_name" == *"ezkl.nbconvert"* || "$notebook_name" == *"riscZero.nbconvert"* ]]; then
+                # Ignore certain files based on the exclude patterns
+                should_skip=false
+                for pattern in "${exclude_patterns[@]}"; do
+                    if [[ "$notebook_name" == *"$pattern"* ]]; then
+                        should_skip=true
+                        break
+                    fi
+                done
+
+                if [[ "$should_skip" == true ]]; then
                     continue  # Skip the rest of the loop and go to the next iteration
                 fi
 

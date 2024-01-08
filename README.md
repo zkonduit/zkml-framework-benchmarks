@@ -4,12 +4,6 @@
 
 To run the benchmarks, you need to first install python and rust on your machine. Then, you can run the following commands to install the dependencies and run the benchmarks. The data will stored in a `benchmarks.json` file in the root directory.
 
-### Enter the R0_zkVM directory
-
-```bash
-cd R0_zkVM
-```
-
 ### Setup Virtual Python Env
 
 ```bash

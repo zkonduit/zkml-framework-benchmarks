@@ -1,9 +1,0 @@
-.DS_Store
-Cargo.lock
-methods/guest/Cargo.lock
-target/
-*.onnx
-*.ipynb_checkpoints
-tree_model_bytes.json
-tree_model_data_bytes.json
-*benchmarks.json

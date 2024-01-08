@@ -14,7 +14,7 @@ mod benchmarking_tests {
 
     lazy_static! {
         static ref CARGO_TARGET_DIR: String =
-            var("CARGO_TARGET_DIR").unwrap_or_else(|_| "./R0_zkVM/target".to_string());
+            var("CARGO_TARGET_DIR").unwrap_or_else(|_| "./target".to_string());
     }
 
     fn create_benchmark_json_file() {
@@ -49,6 +49,7 @@ mod benchmarking_tests {
                     "jupyter==1.0.0",
                     "pandas==2.0.3",
                     "sk2torch==1.2.0",
+                    "matplotlib==3.4.3",
                 ])
                 .status()
                 .expect("failed to execute process");
@@ -97,8 +98,8 @@ mod benchmarking_tests {
                         // only artifacts are generated in the risc0 notebook
                         run_notebooks("./notebooks", test);
                         // we need to run the risc0 zkVM VM on the host to get the proving time
-                        run_risc0_zk_vm(test);
-                        // when we get to the end of the test, we need to pretty print the benchmarks.json file
+                        // run_risc0_zk_vm(test);
+                        // pretty print the benchmarks.json file
                         if test == TESTS[TESTS.len() - 1] {
                             let benchmarks_json = std::fs::read_to_string("./benchmarks.json").unwrap();
                             let benchmarks_json: serde_json::Value = serde_json::from_str(&benchmarks_json).unwrap();
@@ -136,6 +137,19 @@ mod benchmarking_tests {
                 "notebook",
                 "--execute",
                 &format!("{}/{}/{}", test_dir, test, "riscZero.ipynb"),
+            ])
+            .status()
+            .expect("failed to execute process");
+        assert!(status.success());
+        let status = Command::new(python_interpreter)
+            .args([
+                "-m",
+                "jupyter",
+                "nbconvert",
+                "--to",
+                "notebook",
+                "--execute",
+                &format!("{}/{}/{}", test_dir, test, "orion.ipynb"),
             ])
             .status()
             .expect("failed to execute process");

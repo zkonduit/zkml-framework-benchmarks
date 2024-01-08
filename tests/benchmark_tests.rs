@@ -98,7 +98,7 @@ mod benchmarking_tests {
                         // only artifacts are generated in the risc0 notebook
                         run_notebooks("./notebooks", test);
                         // we need to run the risc0 zkVM VM on the host to get the proving time
-                        // run_risc0_zk_vm(test);
+                        run_risc0_zk_vm(test);
                         // pretty print the benchmarks.json file
                         if test == TESTS[TESTS.len() - 1] {
                             let benchmarks_json = std::fs::read_to_string("./benchmarks.json").unwrap();

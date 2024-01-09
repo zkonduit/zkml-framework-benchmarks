@@ -2,7 +2,7 @@
 
 ## Getting started
 
-To run the benchmarks, you need to first install python and rust on your machine. Then, you can run the following commands to install the dependencies and run the benchmarks. The data will stored in a `benchmarks.json` file in the root directory.
+To run the benchmarks, you need to first install python, rust and scarb on your machine. Then, you can run the following commands to install the dependencies and run the benchmarks. The data will stored in a `benchmarks.json` file in the root directory.
 
 ### Setup Virtual Python Env
 

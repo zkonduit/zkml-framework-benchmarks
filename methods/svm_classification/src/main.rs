@@ -39,7 +39,7 @@ pub fn main() {
     // We need to use THE EXACT SAME SVCParameters that we used to train the model.  Adjust the code below in accordance with how you trained the SVC model.
     let params_same = &SVCParameters::default()
         .with_c(1.0)
-        .with_kernel(Kernels::rbf().with_gamma(0.7));
+        .with_kernel(Kernels::linear());
 
     // Now we can update the model with params_same.  The RISC Zero fork changes the visibility of the parameters field of the SVC and SVR model structs to public to allow for this reinsertion
     model.parameters = Some(params_same);

@@ -23,7 +23,7 @@ fi
 
 # Install Risc0 toolchain
 
-#check if cargo-risczero is installed
+# Check if cargo-risczero is installed
 if ! command -v cargo-risczero &> /dev/null
 then
     echo "risczero toolchain not found, installing ..."
@@ -40,6 +40,11 @@ then
     curl --proto '=https' --tlsv1.2 -sSf https://docs.swmansion.com/scarb/install.sh | sh
     all_dependencies_installed=false
 fi
+
+# Install Rust jupyter kernel
+
+cargo install evcxr_jupyter
+evcxr_jupyter --install
 
 # Check if all dependencies were already installed
 if [ "$all_dependencies_installed" = true ]; then

@@ -9,7 +9,7 @@ After that we need to setup our python virtual environment:
 ```bash
 # Setup Python virtual environment
 python3.9 -m venv .env
-source venv/bin/activate
+source .env/bin/activate
 ```
 
 Finally run this cargo nextest test command to get the benchmarks:

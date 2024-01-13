@@ -72,7 +72,7 @@ mod benchmarking_tests {
 
     const TESTS: [&str; 3] = [
         "linear_regressions",
-        "decision_trees",
+        "random_forests",
         "svm_classifications",
     ];
 
@@ -142,7 +142,7 @@ mod benchmarking_tests {
             .expect("failed to execute process");
         assert!(status.success());
         // if test dir is decision_trees, we need to skip the orion notebook
-        if test == "decision_trees" {
+        if test == "random_forests" {
             return;
         }
         let status = Command::new(python_interpreter)

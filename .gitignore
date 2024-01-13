@@ -8,6 +8,7 @@ tree_model_data_bytes.json
 *.cairo
 *settings.json
 *witness.json
+*calibration.json
 *.env
 *.nbconvert.ipynb
 .DS_Store

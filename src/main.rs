@@ -17,12 +17,13 @@ use risc0_zkvm::{default_prover, ExecutorEnv};
 use serde::Serialize;
 use serde_json;
 use smartcore::{
-    linalg::basic::matrix::DenseMatrix, linear::linear_regression::LinearRegression, svm::svc::SVC,
-    tree::decision_tree_classifier::*,
+    ensemble::random_forest_classifier::*, linalg::basic::matrix::DenseMatrix,
+    linear::linear_regression::LinearRegression, svm::svc::SVC,
 };
-use smartcore_ml_methods::DECISION_TREE_ELF;
 use smartcore_ml_methods::LINEAR_REGRESSION_ELF;
+use smartcore_ml_methods::RANDOM_FOREST_ELF;
 use smartcore_ml_methods::SVM_CLASSIFICATION_ELF;
+use std::fs;
 use std::time::Instant;
 
 // The serialized trained model and input data are embedded from files
@@ -31,17 +32,6 @@ use std::time::Instant;
 // this approach is desired, be sure to import the corresponding SmartCore
 // modules and serialize the model and data to byte arrays before transfer to
 // the guest.
-const MODEL_DECISION_TREE: &str = include_str!("../res/ml-model/decision_tree_model_bytes.json");
-const DATA_DECISION_TREE: &str = include_str!("../res/input-data/decision_tree_data_bytes.json");
-const MODEL_LINEAR_REGRESSION: &str =
-    include_str!("../res/ml-model/linear_regression_model_bytes.json");
-const DATA_LINEAR_REGRESSION: &str =
-    include_str!("../res/input-data/linear_regression_data_bytes.json");
-
-const MODEL_SVM_CLASSIFICATION: &str =
-    include_str!("../res/ml-model/svm_classification_model_bytes.json");
-const DATA_SVM_CLASSIFICATION: &str =
-    include_str!("../res/input-data/svm_classification_data_bytes.json");
 
 fn main() {
     let matches = App::new("Model Prover")
@@ -53,7 +43,7 @@ fn main() {
                 .short('m')
                 .long("model")
                 .takes_value(true)
-                .help("Specifies the model to prove (linear_regression or decision_tree)"),
+                .help("Specifies the model to prove (linear_regression or random_forest)"),
         )
         .get_matches();
 
@@ -62,9 +52,13 @@ fn main() {
 
     let output = match model_type {
         "linear_regressions" => {
+            let model_linear_regression =
+                &fs::read_to_string("./res/ml-model/linear_regression_model_bytes.json").unwrap();
+            let data_linear_regression =
+                &fs::read_to_string("./res/input-data/linear_regression_data_bytes.json").unwrap();
             // Convert the model and input data from JSON into byte arrays.
-            let model_bytes: Vec<u8> = serde_json::from_str(MODEL_LINEAR_REGRESSION).unwrap();
-            let data_bytes: Vec<u8> = serde_json::from_str(DATA_LINEAR_REGRESSION).unwrap();
+            let model_bytes: Vec<u8> = serde_json::from_str(model_linear_regression).unwrap();
+            let data_bytes: Vec<u8> = serde_json::from_str(data_linear_regression).unwrap();
 
             // Deserialize the data from rmp into native rust types.
             type Model = LinearRegression<f64, u32, DenseMatrix<f64>, Vec<u32>>;
@@ -74,23 +68,31 @@ fn main() {
                 rmp_serde::from_slice(&data_bytes).expect("data failed to deserialize byte array");
             Ok(predict(&model, data, LINEAR_REGRESSION_ELF))
         }
-        "decision_trees" => {
+        "random_forests" => {
+            let model_random_forest =
+                &fs::read_to_string("./res/ml-model/random_forest_model_bytes.json").unwrap();
+            let data_random_forest =
+                &fs::read_to_string("./res/input-data/random_forest_data_bytes.json").unwrap();
             // Convert the model and input data from JSON into byte arrays.
-            let model_bytes: Vec<u8> = serde_json::from_str(MODEL_DECISION_TREE).unwrap();
-            let data_bytes: Vec<u8> = serde_json::from_str(DATA_DECISION_TREE).unwrap();
+            let model_bytes: Vec<u8> = serde_json::from_str(model_random_forest).unwrap();
+            let data_bytes: Vec<u8> = serde_json::from_str(data_random_forest).unwrap();
 
             // Deserialize the data from rmp into native rust types.
-            type Model = DecisionTreeClassifier<f64, u32, DenseMatrix<f64>, Vec<u32>>;
+            type Model = RandomForestClassifier<f64, u8, DenseMatrix<f64>, Vec<u8>>;
             let model: Model = rmp_serde::from_slice(&model_bytes)
                 .expect("model failed to deserialize byte array");
             let data: DenseMatrix<f64> =
                 rmp_serde::from_slice(&data_bytes).expect("data failed to deserialize byte array");
-            Ok(predict(&model, data, DECISION_TREE_ELF))
+            Ok(predict(&model, data, RANDOM_FOREST_ELF))
         }
         "svm_classifications" => {
+            let model_svm_classification =
+                &fs::read_to_string("./res/ml-model/svm_classification_model_bytes.json").unwrap();
+            let data_svm_classification =
+                &fs::read_to_string("./res/input-data/svm_classification_data_bytes.json").unwrap();
             // Convert the model and input data from JSON into byte arrays.
-            let model_bytes: Vec<u8> = serde_json::from_str(MODEL_SVM_CLASSIFICATION).unwrap();
-            let data_bytes: Vec<u8> = serde_json::from_str(DATA_SVM_CLASSIFICATION).unwrap();
+            let model_bytes: Vec<u8> = serde_json::from_str(model_svm_classification).unwrap();
+            let data_bytes: Vec<u8> = serde_json::from_str(data_svm_classification).unwrap();
 
             // Deserialize the data from rmp into native rust types.
             let model: SVC<f64, i32, DenseMatrix<f64>, Vec<i32>> =
@@ -143,31 +145,27 @@ fn predict<T: Serialize>(
 
 #[cfg(test)]
 mod test {
+    use std::env;
+    use std::fs;
+
     use smartcore::{
-        linalg::basic::matrix::DenseMatrix, linear::linear_regression::LinearRegression,
-        svm::svc::SVC, tree::decision_tree_classifier::*,
+        ensemble::random_forest_classifier::*, linalg::basic::matrix::DenseMatrix,
+        linear::linear_regression::LinearRegression, svm::svc::SVC,
     };
-    use smartcore_ml_methods::DECISION_TREE_ELF;
     use smartcore_ml_methods::LINEAR_REGRESSION_ELF;
+    use smartcore_ml_methods::RANDOM_FOREST_ELF;
     use smartcore_ml_methods::SVM_CLASSIFICATION_ELF;
-    const MODEL_DECISION_TREE: &str =
-        include_str!("../res/ml-model/decision_tree_model_bytes.json");
-    const DATA_DECISION_TREE: &str =
-        include_str!("../res/input-data/decision_tree_data_bytes.json");
-    const MODEL_LINEAR_REGRESSION: &str =
-        include_str!("../res/ml-model/linear_regression_model_bytes.json");
-    const DATA_LINEAR_REGRESSION: &str =
-        include_str!("../res/input-data/linear_regression_data_bytes.json");
-    const MODEL_SVM_CLASSIFICATION: &str =
-        include_str!("../res/ml-model/svm_classification_model_bytes.json");
-    const DATA_SVM_CLASSIFICATION: &str =
-        include_str!("../res/input-data/svm_classification_data_bytes.json");
+
     #[test]
     fn linear_regression() {
+        let model_linear_regression =
+            &fs::read_to_string("./res/ml-model/linear_regression_model_bytes.json").unwrap();
+        let data_linear_regression =
+            &fs::read_to_string("./res/input-data/linear_regression_data_bytes.json").unwrap();
         const EXPECTED: &[u32] = &[3];
         // Convert the model and input data from JSON into byte arrays.
-        let model_bytes: Vec<u8> = serde_json::from_str(MODEL_LINEAR_REGRESSION).unwrap();
-        let data_bytes: Vec<u8> = serde_json::from_str(DATA_LINEAR_REGRESSION).unwrap();
+        let model_bytes: Vec<u8> = serde_json::from_str(model_linear_regression).unwrap();
+        let data_bytes: Vec<u8> = serde_json::from_str(data_linear_regression).unwrap();
 
         // Deserialize the data from rmp into native rust types.
         type Model = LinearRegression<f64, u32, DenseMatrix<f64>, Vec<u32>>;
@@ -179,8 +177,16 @@ mod test {
         assert_eq!(EXPECTED, result.0);
     }
     #[test]
-    fn decision_tree() {
-        const EXPECTED: &[u32] = &[
+    fn random_forest() {
+        println!(
+            "Current working directory: {:?}",
+            env::current_dir().unwrap()
+        );
+        let model_random_forest =
+            &fs::read_to_string("./res/ml-model/random_forest_model_bytes.json").unwrap();
+        let data_random_forest =
+            &fs::read_to_string("./res/input-data/random_forest_data_bytes.json").unwrap();
+        const EXPECTED: &[u8] = &[
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1,
             1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -189,26 +195,32 @@ mod test {
             2, 2, 2, 2, 2,
         ];
         // Convert the model and input data from JSON into byte arrays.
-        let model_bytes: Vec<u8> = serde_json::from_str(MODEL_DECISION_TREE).unwrap();
-        let data_bytes: Vec<u8> = serde_json::from_str(DATA_DECISION_TREE).unwrap();
+        let model_bytes: Vec<u8> = serde_json::from_str(model_random_forest).unwrap();
+        let data_bytes: Vec<u8> = serde_json::from_str(data_random_forest).unwrap();
 
         // Deserialize the data from rmp into native rust types.
-        type Model = DecisionTreeClassifier<f64, u32, DenseMatrix<f64>, Vec<u32>>;
+        type Model = RandomForestClassifier<f64, u8, DenseMatrix<f64>, Vec<u8>>;
         let model: Model =
             rmp_serde::from_slice(&model_bytes).expect("model failed to deserialize byte array");
         let data: DenseMatrix<f64> =
             rmp_serde::from_slice(&data_bytes).expect("data failed to deserialize byte array");
-        let result = super::predict(&model, data, DECISION_TREE_ELF);
-        assert_eq!(EXPECTED, result.0);
+        let result = super::predict(&model, data, RANDOM_FOREST_ELF);
+        // convert result.0 to a Vec<u8>
+        let result: Vec<u8> = result.0.iter().map(|x| *x as u8).collect();
+        assert_eq!(EXPECTED, result);
     }
     #[test]
     fn svm_classification() {
+        let model_svm_classification =
+            &fs::read_to_string("./res/ml-model/svm_classification_model_bytes.json").unwrap();
+        let data_svm_classification =
+            &fs::read_to_string("./res/input-data/svm_classification_data_bytes.json").unwrap();
         const EXPECTED: &[i32] = &[
             -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
         ];
 
-        let model_bytes: Vec<u8> = serde_json::from_str(MODEL_SVM_CLASSIFICATION).unwrap();
-        let data_bytes: Vec<u8> = serde_json::from_str(DATA_SVM_CLASSIFICATION).unwrap();
+        let model_bytes: Vec<u8> = serde_json::from_str(model_svm_classification).unwrap();
+        let data_bytes: Vec<u8> = serde_json::from_str(data_svm_classification).unwrap();
 
         // Deserialize the data from rmp into native rust types.
         let model: SVC<f64, i32, DenseMatrix<f64>, Vec<i32>> =

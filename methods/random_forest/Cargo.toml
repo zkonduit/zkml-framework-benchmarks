@@ -1,5 +1,5 @@
 [package]
-name = "decision_tree"
+name = "random_forest"
 version = "0.1.0"
 edition = "2021"
 

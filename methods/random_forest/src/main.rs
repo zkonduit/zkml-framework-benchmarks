@@ -16,7 +16,7 @@
 
 use risc0_zkvm::guest::env;
 use smartcore::{
-    linalg::basic::matrix::DenseMatrix, tree::decision_tree_classifier::DecisionTreeClassifier,
+    ensemble::random_forest_classifier::RandomForestClassifier, linalg::basic::matrix::DenseMatrix,
 };
 
 risc0_zkvm::guest::entry!(main);
@@ -25,7 +25,7 @@ pub fn main() {
     // Read the model from the host into a SmartCore Decesion Tree model object.
     // We MUST explicitly declare the correct type in order for deserialization to be
     // successful.
-    type Model = DecisionTreeClassifier<f64, u32, DenseMatrix<f64>, Vec<u32>>;
+    type Model = RandomForestClassifier<f64, u8, DenseMatrix<f64>, Vec<u8>>;
     let trained_model: Model = env::read();
 
     // Read the input data into a DenseMatrix.

@@ -168,12 +168,8 @@ mod benchmarking_tests {
             .output()
             .expect("Failed to execute command");
 
-        // You can then print the output or handle it as needed
-        println!("Status: {}", output.status);
-
         {
             let output = String::from_utf8_lossy(&output.stdout);
-            println!("Output: {}", output);
             // use regex to extract the Proving time
             let re = Regex::new(r"Proving time: (\d+\.\d+)s").unwrap();
             let caps = re.captures(&output).unwrap();

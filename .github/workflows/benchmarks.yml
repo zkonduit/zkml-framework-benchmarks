@@ -73,4 +73,4 @@ jobs:
       #     echo $KAGGLE_API_KEY > /home/ubuntu/.kaggle/kaggle.json
       #     chmod 600 /home/ubuntu/.kaggle/kaggle.json
       - name: Run all benchmarks across all models
-        run: source .env/bin/activate; cargo nextest run benchmarking_tests::tests::run_benchmarks_ --test-threads 1
+        run: source .env/bin/activate; cargo nextest run benchmarking_tests::tests::run_benchmarks_ --no-capture

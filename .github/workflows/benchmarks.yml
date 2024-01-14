@@ -45,7 +45,7 @@ jobs:
           python-version: "3.9"
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2023-08-24
+          toolchain: nightly
           override: true
           components: rustfmt, clippy
       - uses: baptiste0928/cargo-install@v1

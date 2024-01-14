@@ -45,15 +45,22 @@ jobs:
           python-version: "3.9"
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2023-08-24
+          toolchain: nightly
           override: true
           components: rustfmt, clippy
       - uses: baptiste0928/cargo-install@v1
         with:
           crate: cargo-nextest
           locked: true
-      - name: Install solc
-        run: (hash svm 2>/dev/null || cargo install svm-rs) && svm install 0.8.20 && solc --version
+      - name: Install Risc0 toolchain
+        run: |
+          cargo install cargo-binstall
+          yes | cargo binstall cargo-risczero
+          cargo risczero install
+      - name: Install Rust jupyter kernel
+        run: |
+          cargo install evcxr_jupyter
+          evcxr_jupyter --install
       - name: Setup Virtual Env
         run: python -m venv .env; source .env/bin/activate;
       # - name: authenticate-kaggle-cli

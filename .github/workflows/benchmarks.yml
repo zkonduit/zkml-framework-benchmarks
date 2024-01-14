@@ -55,7 +55,7 @@ jobs:
       - name: Install Risc0 toolchain
         run: |
           cargo install cargo-binstall
-          cargo binstall cargo-risczero
+          yes | cargo binstall cargo-risczero
           cargo risczero install
       - name: Install Rust jupyter kernel
         run: |

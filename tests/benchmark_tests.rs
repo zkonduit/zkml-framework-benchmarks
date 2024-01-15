@@ -50,6 +50,8 @@ mod benchmarking_tests {
                     "pandas==2.0.3",
                     "sk2torch==1.2.0",
                     "matplotlib==3.4.3",
+                    "starknet-py==0.18.3",
+                    "skl2onnx==1.16.0",
                 ])
                 .status()
                 .expect("failed to execute process");
@@ -162,12 +164,8 @@ mod benchmarking_tests {
             .output()
             .expect("Failed to execute command");
 
-        // You can then print the output or handle it as needed
-        println!("Status: {}", output.status);
-
         {
             let output = String::from_utf8_lossy(&output.stdout);
-            println!("Output: {}", output);
             // use regex to extract the Proving time
             let re = Regex::new(r"Proving time: (\d+\.\d+)s").unwrap();
             let caps = re.captures(&output).unwrap();

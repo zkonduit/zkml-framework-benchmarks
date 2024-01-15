@@ -32,6 +32,17 @@ install_python() {
     setup_python_env
 }
 
+# Check if pyenv is installed and setup python 3.9
+if ! command -v pyenv &> /dev/null
+then
+    all_dependencies_installed=false
+    install_python
+else
+    echo "pyenv is already installed. Setting up a Python 3.9 environment for the folder..."
+    all_dependencies_installed=false
+    setup_python_env
+fi
+
 # Install jq
 if ! command -v jq &> /dev/null
 then
@@ -50,17 +61,6 @@ then
     all_dependencies_installed=false
 else
     echo "sqlite3 is already installed."
-fi
-
-# Check if pyenv is installed and setup python 3.9
-if ! command -v pyenv &> /dev/null
-then
-    all_dependencies_installed=false
-    install_python
-else
-    echo "pyenv is already installed. Setting up a Python 3.9 environment for the folder..."
-    all_dependencies_installed=false
-    setup_python_env
 fi
 
 if rustup component list --installed | grep -q rust-src; then

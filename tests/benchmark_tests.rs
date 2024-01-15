@@ -50,6 +50,8 @@ mod benchmarking_tests {
                     "pandas==2.0.3",
                     "sk2torch==1.2.0",
                     "matplotlib==3.4.3",
+                    "starknet-py==0.18.3",
+                    "skl2onnx==1.16.0",
                 ])
                 .status()
                 .expect("failed to execute process");

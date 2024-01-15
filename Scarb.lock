@@ -49,8 +49,8 @@ dependencies = [
 
 [[package]]
 name = "orion"
-version = "0.1.9"
-source = "git+https://github.com/gizatechxyz/orion.git?branch=develop#6fb2d91275749b3ac28aa693abc15a871503a540"
+version = "0.2.0"
+source = "git+https://github.com/gizatechxyz/orion.git?branch=develop#4d34849c342ca74d3113527f666df55994809eb3"
 dependencies = [
  "alexandria_data_structures",
  "alexandria_merkle_tree",

@@ -18,7 +18,7 @@ install_pyenv() {
 setup_python_env() {
     echo "Setting up Python 3.9 environment..."
     sudo apt-get update
-    sudo apt-get install libbz2-dev libsqlite3-dev liblzma-dev
+    yes | sudo apt-get install libbz2-dev libsqlite3-dev liblzma-dev
     pyenv uninstall 3.9.18
     pyenv install 3.9.18
     pyenv local 3.9.18

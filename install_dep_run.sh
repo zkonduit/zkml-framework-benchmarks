@@ -17,8 +17,11 @@ install_pyenv() {
 # Function to setup Python environment
 setup_python_env() {
     echo "Setting up Python 3.9 environment..."
-    pyenv install 3.9
-    pyenv local 3.9
+    sudo apt-get update
+    sudo apt-get install libbz2-dev libsqlite3-dev liblzma-dev
+    pyenv uninstall 3.9.18
+    pyenv install 3.9.18
+    pyenv local 3.9.18
     python -m venv .env
     source .env/bin/activate
     echo "Python 3.9 environment setup complete. Run 'deactivate' to deactivate the virtual environment. Run 'source .env/bin/activate' to activate the virtual environment."
@@ -30,7 +33,6 @@ install_python() {
     setup_python_env
 }
 
-yes | sudo apt install build-essential zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev wget 
 
 # Check if pyenv is installed, if not, install everything
 if ! command -v pyenv &> /dev/null

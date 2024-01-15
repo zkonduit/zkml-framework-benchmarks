@@ -32,6 +32,26 @@ install_python() {
     setup_python_env
 }
 
+# Install jq
+if ! command -v jq &> /dev/null
+then
+    echo "jq not found, installing jq..."
+    yes | sudo apt-get install jq
+    all_dependencies_installed=false
+else
+    echo "jq is already installed."
+fi
+
+# Install SQLite3
+if ! command -v sqlite3 &> /dev/null
+then
+    echo "sqlite3 not found, installing sqlite3..."
+    yes | sudo apt-get install sqlite3
+    all_dependencies_installed=false
+else
+    echo "sqlite3 is already installed."
+fi
+
 # Check if pyenv is installed and setup python 3.9
 if ! command -v pyenv &> /dev/null
 then

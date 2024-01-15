@@ -15,10 +15,10 @@ env:
 jobs:
   benchmark-tests:
     runs-on:
-      ubuntu-latest-32-cores
+      ubuntu-latest-64-cores
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
         run: bash install_dep_run.sh
       - name: Run all benchmarks across all models
-        run: source .env/bin/activate; cargo nextest run benchmarking_tests::tests::run_benchmarks_ --test-threads 1
+        run: source .env/bin/activate; cargo nextest run benchmarking_tests::tests::run_benchmarks_ --no-capture

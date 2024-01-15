@@ -30,6 +30,8 @@ install_python() {
     setup_python_env
 }
 
+yes | sudo apt install build-essential zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev wget 
+
 # Check if pyenv is installed, if not, install everything
 if ! command -v pyenv &> /dev/null
 then

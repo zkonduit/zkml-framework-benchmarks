@@ -3,13 +3,46 @@
 # Initialize a flag to track if all dependencies are already installed
 all_dependencies_installed=true
 
-# Check Python 3.9
-if ! command -v python3.9 &> /dev/null
+# Install pyenv
+install_pyenv() {
+    echo "Installing pyenv..."
+    curl https://pyenv.run | bash
+}
+
+# Install Python 3.9 using pyenv
+setup_python_env() {
+    echo "Setting up Python 3.9 environment..."
+    pyenv install 3.9
+    pyenv local 3.9
+    python -m venv .env
+    source .env/bin/activate
+    echo "Python 3.9 environment setup complete. \nRun $ deactivate to deactivate the virtual environment. \nRun $ source .env/bin/activate to activate the virtual environment."
+}
+
+install_python() {
+    # Install pyenv
+    install_pyenv
+
+    # Add pyenv to path
+    export PATH="$HOME/.pyenv/bin:$PATH"
+    eval "$(pyenv init --path)"
+    eval "$(pyenv virtualenv-init -)"
+
+    # Setup Python environment
+    setup_python_env
+}
+
+# Check if pyenv is installed and setup python 3.9
+if ! command -v pyenv &> /dev/null
 then
-    echo "Python 3.9 not found, installing Python 3.9..."
-    brew install python@3.9
     all_dependencies_installed=false
+    install_python
+else
+    echo "pyenv is already installed. Setting up a Python 3.9 environment for the folder..."
+    all_dependencies_installed=false
+    setup_python_env
 fi
+
 
 # Check Rust
 if ! command -v rustc &> /dev/null

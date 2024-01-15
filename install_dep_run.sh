@@ -43,6 +43,12 @@ else
     setup_python_env
 fi
 
+if rustup component list --installed | grep -q rust-src; then
+    rustup component remove rust-src
+fi
+rustup component add rust-src
+
+
 # Check Rust
 if ! command -v rustc &> /dev/null; then
     echo "Rust not found, installing Rust..."
@@ -97,6 +103,7 @@ fi
 
 # Install Rust jupyter kernel
 
+source $HOME/.cargo/env
 cargo install evcxr_jupyter
 evcxr_jupyter --install
 

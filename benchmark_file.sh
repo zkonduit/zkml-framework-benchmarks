@@ -36,11 +36,11 @@ for subdir in "$notebooks_dir"/*; do
                     continue  # Skip the rest of the loop and go to the next iteration
                 fi
 
-                # Add provingTime and verifyTime fields to the notebook object
+                # Add provingTime and memoryUsage fields to the notebook object
                 subdir_object=$(jq -n \
                     --arg name "$notebook_name" \
                     --argjson obj "$subdir_object" \
-                    '$obj + {($name): {"provingTime": null}}')
+                    '$obj + {($name): {"provingTime": null, "memoryUsage": null}}')
             fi
         done
 

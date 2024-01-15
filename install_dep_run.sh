@@ -74,7 +74,7 @@ fi
 if ! command -v cargo-nextest &> /dev/null
 then
     echo "nextest toolchain not found, installing ..."
-    cargo binstall cargo-nextest --secure
+    yes | cargo binstall cargo-nextest --secure
     all_dependencies_installed=false
 fi
 
@@ -82,7 +82,7 @@ fi
 if ! command -v cargo-risczero &> /dev/null
 then
     echo "risczero toolchain not found, installing ..."
-    cargo binstall cargo-risczero
+    yes | cargo binstall cargo-risczero
     cargo risczero install
     all_dependencies_installed=false
 fi

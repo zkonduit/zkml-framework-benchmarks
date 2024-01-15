@@ -141,10 +141,6 @@ mod benchmarking_tests {
             .status()
             .expect("failed to execute process");
         assert!(status.success());
-        // if test dir is decision_trees, we need to skip the orion notebook
-        if test == "random_forests" {
-            return;
-        }
         let status = Command::new(python_interpreter)
             .args([
                 "-m",

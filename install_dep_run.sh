@@ -62,13 +62,26 @@ else
     echo "Rust is already installed."
 fi
 
-# Install Risc0 toolchain
+# Check if cargo binstall is installed
+if ! command -v cargo-binstall &> /dev/null
+then
+    echo "cargo-binstall not found, installing ..."
+    cargo install cargo-binstall
+    all_dependencies_installed=false
+fi
+
+# Check if cargo-nextest is installed
+if ! command -v cargo-nextest &> /dev/null
+then
+    echo "nextest toolchain not found, installing ..."
+    cargo binstall cargo-nextest --secure
+    all_dependencies_installed=false
+fi
 
 # Check if cargo-risczero is installed
 if ! command -v cargo-risczero &> /dev/null
 then
     echo "risczero toolchain not found, installing ..."
-    cargo install cargo-binstall
     cargo binstall cargo-risczero
     cargo risczero install
     all_dependencies_installed=false

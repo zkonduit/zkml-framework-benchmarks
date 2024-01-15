@@ -3,36 +3,34 @@
 # Initialize a flag to track if all dependencies are already installed
 all_dependencies_installed=true
 
-# Install pyenv
+# Function to install pyenv
 install_pyenv() {
     echo "Installing pyenv..."
     curl https://pyenv.run | bash
+
+    # Add pyenv to path and initialize immediately after installation
+    export PATH="$HOME/.pyenv/bin:$PATH"
+    eval "$(pyenv init --path)"
+    eval "$(pyenv virtualenv-init -)"
 }
 
-# Install Python 3.9 using pyenv
+# Function to setup Python environment
 setup_python_env() {
     echo "Setting up Python 3.9 environment..."
     pyenv install 3.9
     pyenv local 3.9
     python -m venv .env
     source .env/bin/activate
-    echo "Python 3.9 environment setup complete. Run $ deactivate to deactivate the virtual environment. Run $ source .env/bin/activate to activate the virtual environment."
+    echo "Python 3.9 environment setup complete. Run 'deactivate' to deactivate the virtual environment. Run 'source .env/bin/activate' to activate the virtual environment."
 }
 
+# Main installation function
 install_python() {
-    # Install pyenv
     install_pyenv
-
-    # Add pyenv to path
-    export PATH="$HOME/.pyenv/bin:$PATH"
-    eval "$(pyenv init --path)"
-    eval "$(pyenv virtualenv-init -)"
-
-    # Setup Python environment
     setup_python_env
 }
 
-# Check if pyenv is installed and setup python 3.9
+# Check if pyenv is installed, if not, install everything
 if ! command -v pyenv &> /dev/null
 then
     all_dependencies_installed=false

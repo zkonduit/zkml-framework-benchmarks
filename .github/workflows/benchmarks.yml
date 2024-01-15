@@ -18,6 +18,8 @@ jobs:
       large-self-hosted
     steps:
       - uses: actions/checkout@v4
+      - name: Install jq
+        run: yes | sudo apt-get install jq
       - name: Install dependencies
         run: bash install_dep_run.sh
       - name: Run all benchmarks across all models

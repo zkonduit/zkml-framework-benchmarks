@@ -18,9 +18,31 @@ jobs:
       large-self-hosted
     steps:
       - uses: actions/checkout@v4
-      - name: Install jq
-        run: yes | sudo apt-get install jq
-      - name: Install dependencies
-        run: bash install_dep_run.sh
+      - uses: software-mansion/setup-scarb@v1
+        with:
+          scarb-version: "2.4.0"
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+          components: rustfmt, clippy
+      - uses: baptiste0928/cargo-install@v1
+        with:
+          crate: cargo-nextest
+          locked: true
+      - name: Install Risc0 toolchain
+        run: |
+          cargo install cargo-binstall
+          yes | cargo binstall cargo-risczero
+          cargo risczero install
+      - name: Install Rust jupyter kernel
+        run: |
+          cargo install evcxr_jupyter
+          evcxr_jupyter --install
+      - name: Setup Virtual Env
+        run: python -m venv .env; source .env/bin/activate;
       - name: Run all benchmarks across all models
         run: source .env/bin/activate; cargo nextest run benchmarking_tests::tests::run_benchmarks_ --no-capture

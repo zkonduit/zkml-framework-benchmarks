@@ -2,6 +2,7 @@
 mod benchmarking_tests {
 
     use lazy_static::lazy_static;
+    use serde_json::Value;
     use std::env::var;
     use std::process::{Command, Stdio};
     use std::sync::Once;
@@ -87,6 +88,8 @@ mod benchmarking_tests {
                 use test_case::test_case;
                 use super::*;
 
+                const RUNS: usize = 10;
+
                 seq!(N in 0..=2 {
 
                     #(#[test_case(TESTS[N])])*
@@ -96,11 +99,13 @@ mod benchmarking_tests {
                             crate::benchmarking_tests::create_benchmark_json_file();
                         }
                         crate::benchmarking_tests::init_binary();
-                        // artifact generation and proving happens all in the ezkl notebook
-                        // only artifacts are generated in the risc0 notebook
-                        run_notebooks("./notebooks", test);
-                        // we need to run the risc0 zkVM VM on the host to get the proving time
-                        run_risc0_zk_vm(test);
+                        for _ in 0..RUNS {
+                            // artifact generation and proving happens all in the ezkl notebook
+                            // only artifacts are generated in the risc0 notebook
+                            run_notebooks("./notebooks", test);
+                            // we need to run the risc0 zkVM VM on the host to get the proving time
+                            run_risc0_zk_vm(test);
+                        }
                         // pretty print the benchmarks.json file
                         let benchmarks_json = std::fs::read_to_string("./benchmarks.json").unwrap();
                         let benchmarks_json: serde_json::Value = serde_json::from_str(&benchmarks_json).unwrap();
@@ -190,16 +195,23 @@ mod benchmarking_tests {
             .and_then(|caps| caps.get(1))
             .map_or("".to_string(), |m| m.as_str().to_string() + "s");
 
-        // read in benchmarks.json file
+        // Read in benchmarks.json file
         let benchmarks_json = std::fs::read_to_string("./benchmarks.json").unwrap();
         let mut benchmarks_json: serde_json::Value =
             serde_json::from_str(&benchmarks_json).unwrap();
 
-        benchmarks_json[test]["riscZero"]["provingTime"] =
-            serde_json::Value::String(proving_time_r0);
-        benchmarks_json[test]["riscZero"]["memoryUsage"] = serde_json::Value::String(memory_usage);
+        // Append proving time and memory usage to the list
+        let proving_time_list = benchmarks_json[test]["riscZero"]["provingTime"]
+            .as_array_mut()
+            .unwrap();
+        proving_time_list.push(Value::String(proving_time_r0));
 
-        // write to benchmarks.json file
+        let memory_usage_list = benchmarks_json[test]["riscZero"]["memoryUsage"]
+            .as_array_mut()
+            .unwrap();
+        memory_usage_list.push(Value::String(memory_usage));
+
+        // Write to benchmarks.json file
         std::fs::write(
             "./benchmarks.json",
             serde_json::to_string_pretty(&benchmarks_json).unwrap(),

@@ -102,11 +102,9 @@ mod benchmarking_tests {
                         // we need to run the risc0 zkVM VM on the host to get the proving time
                         run_risc0_zk_vm(test);
                         // pretty print the benchmarks.json file
-                        if test == TESTS[TESTS.len() - 1] {
-                            let benchmarks_json = std::fs::read_to_string("./benchmarks.json").unwrap();
-                            let benchmarks_json: serde_json::Value = serde_json::from_str(&benchmarks_json).unwrap();
-                            println!("{}", serde_json::to_string_pretty(&benchmarks_json).unwrap());
-                        }
+                        let benchmarks_json = std::fs::read_to_string("./benchmarks.json").unwrap();
+                        let benchmarks_json: serde_json::Value = serde_json::from_str(&benchmarks_json).unwrap();
+                        println!("{}", serde_json::to_string_pretty(&benchmarks_json).unwrap());
                     }
                 });
             }
@@ -143,10 +141,6 @@ mod benchmarking_tests {
             .status()
             .expect("failed to execute process");
         assert!(status.success());
-        // if test dir is decision_trees, we need to skip the orion notebook
-        if test == "random_forests" {
-            return;
-        }
         let status = Command::new(python_interpreter)
             .args([
                 "-m",

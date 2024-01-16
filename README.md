@@ -2,13 +2,19 @@
 
 ## Getting started
 
-To run the benchmarks, you need to first install python (version 3.9.18 specifically), rust, rust jupyter kernel, risc0 toolchain, and scarb on your machine. If you are using a mac, run `bash install_dep_run.sh` at the root of the directory to install of these dependencies in one go. 
+To run the benchmarks, you need to first install python (version 3.9.18 specifically), rust, rust jupyter kernel, risc0 toolchain, and scarb on your unix-like machine.
 
-After that we need to setup our python virtual environment:
+To install the required dependencies run.
 
 ```bash
-# Setup Python virtual environment
-python3.9 -m venv .env
+bash install_dep_run.sh
+```
+
+For windows systems, you will need to install the dependencies manually.
+
+You may run the following to activate the virtual environment if had been deactivated.
+
+```bash
 source .env/bin/activate
 ```
 

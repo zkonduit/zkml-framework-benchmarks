@@ -3,7 +3,7 @@ mod benchmarking_tests {
 
     use lazy_static::lazy_static;
     use std::env::var;
-    use std::process::Command;
+    use std::process::{Command, Stdio};
     use std::sync::Once;
     static COMPILE: Once = Once::new();
     static ENV_SETUP: Once = Once::new();
@@ -157,32 +157,54 @@ mod benchmarking_tests {
     }
 
     fn run_risc0_zk_vm(test: &str) {
-        // Run the risc0 smartcore model on the host, then get the proving time
-        let output = Command::new("cargo")
-            .env("RISC0_DEV_MODE", "0") // Set the environment variable
+        // Start the process without waiting for it to complete
+        let child = Command::new("cargo")
+            .env("RISC0_DEV_MODE", "0")
             .args(&["run", "--release", "--", "--model", test])
-            .output()
-            .expect("Failed to execute command");
+            .stdout(Stdio::piped())
+            .spawn()
+            .expect("Failed to start process");
 
-        {
-            let output = String::from_utf8_lossy(&output.stdout);
-            // use regex to extract the Proving time
-            let re = Regex::new(r"Proving time: (\d+\.\d+)s").unwrap();
-            let caps = re.captures(&output).unwrap();
-            let proving_time_r0 = caps.get(1).map_or("", |m| m.as_str()).to_string() + "s";
-            // read in benchmarks.json file
-            let benchmarks_json = std::fs::read_to_string("./benchmarks.json").unwrap();
-            let mut benchmarks_json: serde_json::Value =
-                serde_json::from_str(&benchmarks_json).unwrap();
-            benchmarks_json[test]["riscZero"]["provingTime"] =
-                serde_json::Value::String(proving_time_r0);
-            // write to benchmarks.json file
-            std::fs::write(
-                "./benchmarks.json",
-                serde_json::to_string_pretty(&benchmarks_json).unwrap(),
-            )
-            .unwrap();
-        }
+        // Get the PID of the process
+        let pid = child.id();
+
+        // Use `ps` to get memory usage
+        let output = Command::new("ps")
+            .arg("-o")
+            .arg("rss=")
+            .arg("-p")
+            .arg(pid.to_string())
+            .output()
+            .expect("Failed to execute ps command");
+        let memory_usage = String::from_utf8_lossy(&output.stdout).trim().to_string() + "kb";
+
+        // Wait for the process to complete
+        let output = child.wait_with_output().expect("Failed to wait on child");
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+
+        // Use regex to extract the Proving time
+        let proving_time_re = Regex::new(r"Proving time: (\d+\.\d+)s").unwrap();
+        let proving_time_r0 = proving_time_re
+            .captures(&stdout)
+            .and_then(|caps| caps.get(1))
+            .map_or("".to_string(), |m| m.as_str().to_string() + "s");
+
+        // read in benchmarks.json file
+        let benchmarks_json = std::fs::read_to_string("./benchmarks.json").unwrap();
+        let mut benchmarks_json: serde_json::Value =
+            serde_json::from_str(&benchmarks_json).unwrap();
+
+        benchmarks_json[test]["riscZero"]["provingTime"] =
+            serde_json::Value::String(proving_time_r0);
+        benchmarks_json[test]["riscZero"]["memoryUsage"] = serde_json::Value::String(memory_usage);
+
+        // write to benchmarks.json file
+        std::fs::write(
+            "./benchmarks.json",
+            serde_json::to_string_pretty(&benchmarks_json).unwrap(),
+        )
+        .unwrap();
     }
 
     test_func!();

@@ -42,7 +42,9 @@ jobs:
         run: |
           cargo install evcxr_jupyter
           evcxr_jupyter --install
+      - name: Install GNU Time
+        run: sudo apt-get update && sudo apt-get install -y time
       - name: Setup Virtual Env
         run: python -m venv .env; source .env/bin/activate;
       - name: Run all benchmarks across all models
-        run: source .env/bin/activate; cargo nextest run benchmarking_tests::tests::run_benchmarks_ --no-capture
+        run: OS=linux source .env/bin/activate; cargo nextest run benchmarking_tests::tests::run_benchmarks_ --no-capture

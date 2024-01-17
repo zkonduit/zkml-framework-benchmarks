@@ -88,7 +88,7 @@ mod benchmarking_tests {
                 use test_case::test_case;
                 use super::*;
 
-                const RUNS: usize = 10;
+                const RUNS: usize = 2;
 
                 seq!(N in 0..=2 {
 
@@ -162,40 +162,38 @@ mod benchmarking_tests {
     }
 
     fn run_risc0_zk_vm(test: &str) {
-        // Start the process without waiting for it to complete
-        let child = Command::new("cargo")
-            .env("RISC0_DEV_MODE", "0")
-            .args(&["run", "--release", "--", "--model", test])
-            .stdout(Stdio::piped())
-            .spawn()
-            .expect("Failed to start process");
+        // Command to measure memory usage
+        let time_command = format!("gtime -v cargo run --release -- --model {}", test);
 
-        // Get the PID of the process
-        let pid = child.id();
-
-        // Use `ps` to get memory usage
-        let output = Command::new("ps")
-            .arg("-o")
-            .arg("rss=")
-            .arg("-p")
-            .arg(pid.to_string())
+        // Run the command using Bash, capturing both stdout and stderr
+        let output = Command::new("bash")
+            .arg("-c")
+            .arg(&time_command)
             .output()
-            .expect("Failed to execute ps command");
-        let memory_usage = String::from_utf8_lossy(&output.stdout).trim().to_string() + "kb";
-
-        // Wait for the process to complete
-        let output = child.wait_with_output().expect("Failed to wait on child");
+            .expect("Failed to execute command");
 
         let stdout = String::from_utf8_lossy(&output.stdout);
+        let stderr = String::from_utf8_lossy(&output.stderr);
 
-        // Use regex to extract the Proving time
+        // Print stdout and stderr for debugging
+        println!("stdout: {}", stdout);
+        println!("stderr: {}", stderr);
+
+        // Use regex to extract the Proving time and Memory usage
         let proving_time_re = Regex::new(r"Proving time: (\d+\.\d+)s").unwrap();
+        let memory_usage_re = Regex::new(r"Maximum resident set size \(kbytes\): (\d+)").unwrap();
+
         let proving_time_r0 = proving_time_re
             .captures(&stdout)
             .and_then(|caps| caps.get(1))
             .map_or("".to_string(), |m| m.as_str().to_string() + "s");
 
-        // Read in benchmarks.json file
+        let memory_usage_r0 = memory_usage_re
+            .captures(&stderr)
+            .and_then(|caps| caps.get(1))
+            .map_or("".to_string(), |m| m.as_str().to_string() + "kb");
+
+        // read in benchmarks.json file
         let benchmarks_json = std::fs::read_to_string("./benchmarks.json").unwrap();
         let mut benchmarks_json: serde_json::Value =
             serde_json::from_str(&benchmarks_json).unwrap();
@@ -209,7 +207,7 @@ mod benchmarking_tests {
         let memory_usage_list = benchmarks_json[test]["riscZero"]["memoryUsage"]
             .as_array_mut()
             .unwrap();
-        memory_usage_list.push(Value::String(memory_usage));
+        memory_usage_list.push(Value::String(memory_usage_r0));
 
         // Write to benchmarks.json file
         std::fs::write(

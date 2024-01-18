@@ -47,4 +47,4 @@ jobs:
       - name: Setup Virtual Env
         run: python -m venv .env; source .env/bin/activate;
       - name: Run all benchmarks across all models
-        run: OS=linux source .env/bin/activate; cargo nextest run benchmarking_tests::tests::run_benchmarks_ --no-capture
+        run: export OS=linux; source .env/bin/activate; cargo nextest run benchmarking_tests::tests::run_benchmarks_ --no-capture

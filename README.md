@@ -24,6 +24,12 @@ You may run the following to activate the virtual environment if had been deacti
 source .env/bin/activate
 ```
 
+For linux systems you will also need to set the OS environment variable to linux (default is Mac).
+
+```bash
+export OS=linux
+```
+
 Finally run this cargo nextest test command to get the benchmarks:
 
 ```bash

@@ -4,7 +4,7 @@ mod benchmarking_tests {
     use lazy_static::lazy_static;
     use serde_json::Value;
     use std::env::var;
-    use std::process::{Command, Stdio};
+    use std::process::Command;
     use std::sync::Once;
     static COMPILE: Once = Once::new();
     static ENV_SETUP: Once = Once::new();
@@ -88,7 +88,7 @@ mod benchmarking_tests {
                 use test_case::test_case;
                 use super::*;
 
-                const RUNS: usize = 2;
+                const RUNS: usize = 10;
 
                 seq!(N in 0..=2 {
 
@@ -162,8 +162,22 @@ mod benchmarking_tests {
     }
 
     fn run_risc0_zk_vm(test: &str) {
+        // Check OS environment variable to dertermine whether to use gtime or time
+        let time_command = match var("OS") {
+            Ok(val) => {
+                if val == "linux" {
+                    "/usr/bin/time"
+                } else {
+                    "gtime"
+                }
+            }
+            Err(_) => "gtime",
+        };
         // Command to measure memory usage
-        let time_command = format!("gtime -v cargo run --release -- --model {}", test);
+        let time_command = format!(
+            "{} -v cargo run --release -- --model {}",
+            time_command, test
+        );
 
         // Run the command using Bash, capturing both stdout and stderr
         let output = Command::new("bash")

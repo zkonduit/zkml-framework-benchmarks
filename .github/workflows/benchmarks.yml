@@ -44,6 +44,11 @@ jobs:
           evcxr_jupyter --install
       - name: Install GNU Time
         run: sudo apt-get update && sudo apt-get install -y time
+      - name: Download and Install EZKL Binary
+        run: |
+          curl -L -o ezkl.tar.gz https://github.com/zkonduit/ezkl/releases/download/v7.1.4/build-artifacts.ezkl-linux-gnu.tar.gz
+          tar -xzf ezkl.tar.gz
+          sudo mv ezkl /usr/local/bin/  # Move the binary to a directory in your PATH
       - name: Setup Virtual Env
         run: python -m venv .env; source .env/bin/activate;
       - name: Run all benchmarks across all models

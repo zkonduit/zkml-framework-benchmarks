@@ -43,7 +43,7 @@ mod benchmarking_tests {
                     "-m",
                     "pip",
                     "install",
-                    "ezkl==7.0.0",
+                    "ezkl==7.1.4",
                     "onnx==1.14.0",
                     "hummingbird-ml==0.4.9",
                     "torch==2.0.1",

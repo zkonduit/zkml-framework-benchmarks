@@ -4,7 +4,9 @@
 
 To run the benchmarks, you need to first install python (version 3.9.18 specifically), rust, rust jupyter kernel, risc0 toolchain, and scarb on your unix-like machine.
 
-To install the required dependencies run.
+First, you will need to install ezkl cli version 7.1.4 which you can do from [here](https://github.com/zkonduit/ezkl/releases/tag/v7.1.4) 
+
+To install the other required dependencies run: 
 
 ```bash
 bash install_dep_run.sh

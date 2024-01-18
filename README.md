@@ -12,6 +12,12 @@ bash install_dep_run.sh
 
 For windows systems, you will need to install the dependencies manually.
 
+For linux systems, you may need to install jq.
+
+```bash
+sudo apt-get install jq
+```
+
 You may run the following to activate the virtual environment if had been deactivated.
 
 ```bash

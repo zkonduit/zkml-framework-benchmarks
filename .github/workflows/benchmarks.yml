@@ -33,6 +33,8 @@ jobs:
         with:
           crate: cargo-nextest
           locked: true
+      - name: Cargo clean
+        run: cargo clean
       - name: Install Risc0 toolchain
         run: |
           cargo install cargo-binstall

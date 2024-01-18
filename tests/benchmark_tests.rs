@@ -4,7 +4,7 @@ mod benchmarking_tests {
     use lazy_static::lazy_static;
     use serde_json::Value;
     use std::env::var;
-    use std::process::Command;
+    use std::process::{Command, Stdio};
     use std::sync::Once;
     static COMPILE: Once = Once::new();
     static ENV_SETUP: Once = Once::new();
@@ -70,6 +70,11 @@ mod benchmarking_tests {
         COMPILE.call_once(|| {
             println!("using cargo target dir: {}", *CARGO_TARGET_DIR);
             setup_py_env();
+            // Run `cargo build --release` first to build the risc0 binary
+            let status = Command::new("cargo")
+                .args(["build", "--release"])
+                .status()
+                .expect("failed to execute process");
         });
     }
 
@@ -163,19 +168,14 @@ mod benchmarking_tests {
 
     fn run_risc0_zk_vm(test: &str) {
         // Check OS environment variable to dertermine whether to use gtime or time
-        let time_command = match var("OS") {
-            Ok(val) => {
-                if val == "linux" {
-                    "/usr/bin/time"
-                } else {
-                    "gtime"
-                }
-            }
-            Err(_) => "gtime",
+        let time_command = if cfg!(target_os = "linux") {
+            "/usr/bin/time"
+        } else {
+            "gtime"
         };
         // Command to measure memory usage
         let time_command = format!(
-            "{} -v cargo run --release -- --model {}",
+            "{} -v target/release/zkml-benchmarks --model {}",
             time_command, test
         );
 

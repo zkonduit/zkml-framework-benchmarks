@@ -35,6 +35,8 @@ jobs:
           locked: true
       - name: Cargo clean
         run: cargo clean
+      - name: Delete Cargo.lock
+        run: rm -f Cargo.lock
       - name: Install Risc0 toolchain
         run: |
           cargo install cargo-binstall

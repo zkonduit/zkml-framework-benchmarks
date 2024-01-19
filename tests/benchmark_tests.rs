@@ -94,7 +94,7 @@ mod benchmarking_tests {
                 use test_case::test_case;
                 use super::*;
 
-                const RUNS: usize = 1;
+                const RUNS: usize = 10;
 
                 const TIME_CMD: &str = if cfg!(target_os = "linux") {
                     "/usr/bin/time"

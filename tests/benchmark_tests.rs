@@ -2,10 +2,10 @@
 mod benchmarking_tests {
 
     use lazy_static::lazy_static;
-    use serde_json::Value;
+    use serde_json::{json, Value};
     use std::env::var;
-    use std::process::Command;
     use std::sync::Once;
+    use std::{process::Command, time::Instant};
     static COMPILE: Once = Once::new();
     static ENV_SETUP: Once = Once::new();
     static BENCHMARK_FILE: Once = Once::new();
@@ -71,10 +71,11 @@ mod benchmarking_tests {
             println!("using cargo target dir: {}", *CARGO_TARGET_DIR);
             setup_py_env();
             // Run `cargo build --release` first to build the risc0 binary
-            let _ = Command::new("cargo")
+            let status = Command::new("cargo")
                 .args(["build", "--release"])
                 .status()
                 .expect("failed to execute process");
+            assert!(status.success());
         });
     }
 
@@ -93,7 +94,13 @@ mod benchmarking_tests {
                 use test_case::test_case;
                 use super::*;
 
-                const RUNS: usize = 10;
+                const RUNS: usize = 1;
+
+                const TIME_CMD: &str = if cfg!(target_os = "linux") {
+                    "/usr/bin/time"
+                } else {
+                    "gtime"
+                };
 
                 seq!(N in 0..=2 {
 
@@ -109,12 +116,9 @@ mod benchmarking_tests {
                             // only artifacts are generated in the risc0 notebook
                             run_notebooks("./notebooks", test);
                             // we need to run the risc0 zkVM VM on the host to get the proving time
-                            run_risc0_zk_vm(test);
+                            run_risc0_zk_vm(test, TIME_CMD);
+                            run_cairo_vm(test, TIME_CMD);
                         }
-                        // pretty print the benchmarks.json file
-                        let benchmarks_json = std::fs::read_to_string("./benchmarks.json").unwrap();
-                        let benchmarks_json: serde_json::Value = serde_json::from_str(&benchmarks_json).unwrap();
-                        println!("{}", serde_json::to_string_pretty(&benchmarks_json).unwrap());
                     }
                 });
             }
@@ -166,23 +170,17 @@ mod benchmarking_tests {
         assert!(status.success());
     }
 
-    fn run_risc0_zk_vm(test: &str) {
-        // Check OS environment variable to dertermine whether to use gtime or time
-        let time_command = if cfg!(target_os = "linux") {
-            "/usr/bin/time"
-        } else {
-            "gtime"
-        };
-        // Command to measure memory usage
-        let time_command = format!(
+    fn run_risc0_zk_vm(test: &str, time_cmd: &str) {
+        // Wrap the risc0 binry run command in the gnu time command
+        let command = format!(
             "{} -v target/release/zkml-benchmarks --model {}",
-            time_command, test
+            time_cmd, test
         );
 
         // Run the command using Bash, capturing both stdout and stderr
         let output = Command::new("bash")
             .arg("-c")
-            .arg(&time_command)
+            .arg(&command)
             .output()
             .expect("Failed to execute command");
 
@@ -207,21 +205,80 @@ mod benchmarking_tests {
             .and_then(|caps| caps.get(1))
             .map_or("".to_string(), |m| m.as_str().to_string() + "kb");
 
-        // read in benchmarks.json file
+        update_benchmarks_json(
+            test,
+            "riscZero",
+            Value::String(proving_time_r0),
+            Value::String(memory_usage_r0),
+        );
+    }
+
+    fn run_cairo_vm(test: &str, time_cmd: &str) {
+        // run `scarb build`
+        let status = Command::new("scarb")
+            .args(["build"])
+            .status()
+            .expect("failed to execute process");
+        assert!(status.success());
+
+        let cmd = vec![
+            "scarb",
+            "cairo-run",
+            "--no-build",
+            "--available-gas",
+            "99999999999999999",
+        ];
+
+        let full_cmd = format!("{} -f \"%M\" -- {}", time_cmd, cmd.join(" "));
+        let start_time = Instant::now();
+        let output = Command::new("bash")
+            .arg("-c")
+            .arg(&full_cmd)
+            .output()
+            .expect("Failed to execute command");
+
+        let end_time = Instant::now();
+        let proving_time = end_time.duration_since(start_time).as_secs_f64();
+
+        println!("Full Output:");
+        println!("{}", String::from_utf8_lossy(&output.stdout));
+        println!("{}", String::from_utf8_lossy(&output.stderr));
+
+        // panic if output is not successful
+        if !output.status.success() {
+            panic!("Error: Cairo VM failed to run with gnu time command");
+        }
+
+        let memory_usage = String::from_utf8_lossy(&output.stderr).trim().to_string();
+
+        let memory_usage_kb = format!("{}kb", memory_usage);
+        println!("Memory Usage: {}", memory_usage_kb);
+        println!("Compilation Time: {:.3} seconds", proving_time);
+
+        update_benchmarks_json(
+            test,
+            "orion",
+            json!(format!("{:.3}s", proving_time)),
+            Value::String(memory_usage),
+        );
+    }
+
+    fn update_benchmarks_json(test: &str, framework: &str, time: Value, memory: Value) {
+        // Read in the benchmarks.json file
         let benchmarks_json = std::fs::read_to_string("./benchmarks.json").unwrap();
         let mut benchmarks_json: serde_json::Value =
             serde_json::from_str(&benchmarks_json).unwrap();
 
         // Append proving time and memory usage to the list
-        let proving_time_list = benchmarks_json[test]["riscZero"]["provingTime"]
+        let proving_time_list = benchmarks_json[test][framework]["provingTime"]
             .as_array_mut()
             .unwrap();
-        proving_time_list.push(Value::String(proving_time_r0));
+        proving_time_list.push(time);
 
-        let memory_usage_list = benchmarks_json[test]["riscZero"]["memoryUsage"]
+        let memory_usage_list = benchmarks_json[test][framework]["memoryUsage"]
             .as_array_mut()
             .unwrap();
-        memory_usage_list.push(Value::String(memory_usage_r0));
+        memory_usage_list.push(memory);
 
         // Write to benchmarks.json file
         std::fs::write(

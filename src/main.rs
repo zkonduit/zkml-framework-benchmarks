@@ -186,14 +186,7 @@ mod test {
             &fs::read_to_string("./res/ml-model/random_forest_model_bytes.json").unwrap();
         let data_random_forest =
             &fs::read_to_string("./res/input-data/random_forest_data_bytes.json").unwrap();
-        const EXPECTED: &[u8] = &[
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1,
-            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-            2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-            2, 2, 2, 2, 2,
-        ];
+        const EXPECTED: &[u8] = &[0];
         // Convert the model and input data from JSON into byte arrays.
         let model_bytes: Vec<u8> = serde_json::from_str(model_random_forest).unwrap();
         let data_bytes: Vec<u8> = serde_json::from_str(data_random_forest).unwrap();

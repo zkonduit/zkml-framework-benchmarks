@@ -57,3 +57,5 @@ jobs:
         run: python -m venv .env; source .env/bin/activate;
       - name: Run all benchmarks across all models
         run: source .env/bin/activate; cargo nextest run benchmarking_tests::tests::run_benchmarks_ --no-capture
+      - name: Pretty Print benchmarks.json
+        run: jq '.' benchmarks.json  # Pretty print the benchmarks.json file

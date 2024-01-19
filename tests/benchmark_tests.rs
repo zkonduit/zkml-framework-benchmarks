@@ -118,6 +118,7 @@ mod benchmarking_tests {
                             // we need to run the risc0 zkVM VM on the host to get the proving time
                             run_risc0_zk_vm(test, TIME_CMD);
                             run_cairo_vm(test, TIME_CMD);
+                            ezkl_cli_prove(test, TIME_CMD);
                             // pretty print the benchmarks.json file
                             let benchmarks_json = std::fs::read_to_string("./benchmarks.json").unwrap();
                             let benchmarks_json: serde_json::Value = serde_json::from_str(&benchmarks_json).unwrap();

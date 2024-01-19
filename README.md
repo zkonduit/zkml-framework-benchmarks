@@ -35,7 +35,7 @@ export OS=linux
 Finally run this cargo nextest test command to get the benchmarks:
 
 ```bash
-source .env/bin/activate; cargo nextest run benchmarking_tests::tests::run_benchmarks_ --test-threads 1
+source .env/bin/activate; cargo nextest run benchmarking_tests::tests::run_benchmarks_ --no-capture
 ```
 
 The data will stored in a `benchmarks.json` file in the root directory.

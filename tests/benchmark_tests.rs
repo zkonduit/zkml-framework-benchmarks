@@ -4,7 +4,7 @@ mod benchmarking_tests {
     use lazy_static::lazy_static;
     use serde_json::Value;
     use std::env::var;
-    use std::process::{Command, Stdio};
+    use std::process::Command;
     use std::sync::Once;
     static COMPILE: Once = Once::new();
     static ENV_SETUP: Once = Once::new();
@@ -71,7 +71,7 @@ mod benchmarking_tests {
             println!("using cargo target dir: {}", *CARGO_TARGET_DIR);
             setup_py_env();
             // Run `cargo build --release` first to build the risc0 binary
-            let status = Command::new("cargo")
+            let _ = Command::new("cargo")
                 .args(["build", "--release"])
                 .status()
                 .expect("failed to execute process");

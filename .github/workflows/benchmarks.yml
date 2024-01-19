@@ -15,7 +15,7 @@ env:
 jobs:
   benchmark-tests:
     runs-on:
-      large-self-hosted
+      1000gb
     steps:
       - uses: actions/checkout@v4
       - uses: software-mansion/setup-scarb@v1

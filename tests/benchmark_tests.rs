@@ -264,7 +264,7 @@ mod benchmarking_tests {
             test,
             "orion",
             json!(format!("{:.3}s", proving_time)),
-            Value::String(memory_usage),
+            Value::String(memory_usage_kb),
         );
     }
 

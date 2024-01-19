@@ -5,7 +5,7 @@ mod benchmarking_tests {
     use serde_json::{json, Value};
     use std::env::var;
     use std::sync::Once;
-    use std::{process::Command, time::Instant};
+    use std::{path::Path, process::Command, process::Stdio, time::Instant};
     static COMPILE: Once = Once::new();
     static ENV_SETUP: Once = Once::new();
     static BENCHMARK_FILE: Once = Once::new();
@@ -265,6 +265,56 @@ mod benchmarking_tests {
             json!(format!("{:.3}s", proving_time)),
             Value::String(memory_usage),
         );
+    }
+
+    fn ezkl_cli_prove(test: &str, time_cmd: &str) {
+        // Define the command to run with GNU time
+        let ezkl_command = format!("{} -f %M -- ezkl prove --check-mode=UNSAFE", time_cmd);
+
+        // Set the directory where the ezkl command will be executed
+        let working_directory = format!("./notebooks/{}", test);
+
+        // Run the command using Bash, capturing both stdout and stderr
+        let output = Command::new("bash")
+            .arg("-c")
+            .arg(&ezkl_command)
+            .current_dir(&working_directory)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .output()
+            .expect("Failed to execute command");
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let stderr = String::from_utf8_lossy(&output.stderr);
+
+        // Use regular expression to find the "proof took" value and memory usage
+        let proof_time_re = Regex::new(r"proof took (\d+\.\d+)").unwrap();
+        let memory_usage_re = Regex::new(r"(\d+)").unwrap();
+
+        let proof_time = proof_time_re
+            .captures(&stdout)
+            .and_then(|caps| caps.get(1).map(|m| m.as_str()))
+            .unwrap_or("");
+
+        let memory_usage = memory_usage_re
+            .captures(&stderr)
+            .and_then(|caps| caps.get(1).map(|m| m.as_str()))
+            .unwrap_or("");
+
+        println!("Proof Time: {} seconds", proof_time);
+        println!("Memory Usage: {} KB", memory_usage);
+
+        // Update the benchmarks.json file
+        update_benchmarks_json(
+            test,
+            "ezkl",
+            Value::String(proof_time.to_string() + "s"),
+            Value::String(memory_usage.to_string() + "kb"),
+        );
+
+        // Assert proof path exists at path notebooks/{test}/proof.json
+        let proof_path = format!("./notebooks/{}/{}", test, "proof.json");
+        assert!(Path::new(&proof_path).exists());
     }
 
     fn update_benchmarks_json(test: &str, framework: &str, time: Value, memory: Value) {

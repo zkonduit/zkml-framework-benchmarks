@@ -48,6 +48,8 @@ jobs:
           evcxr_jupyter --install
       - name: Install GNU Time
         run: sudo apt-get update && sudo apt-get install -y time
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
       - name: Download and Install EZKL Binary
         run: |
           curl -L -o ezkl.tar.gz https://github.com/zkonduit/ezkl/releases/download/v7.1.4/build-artifacts.ezkl-linux-gnu.tar.gz

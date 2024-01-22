@@ -101,6 +101,22 @@ then
     all_dependencies_installed=false
 fi
 
+# Check gtime
+if ! command -v gtime &> /dev/null
+then
+    echo "gtime not found, installing gtime..."
+    brew install gnu-time
+    all_dependencies_installed=false
+fi
+
+# Check jq
+if ! command -v jq &> /dev/null
+then
+    echo "jq not found, installing jq..."
+    sudo apt-get install jq
+    all_dependencies_installed=false
+fi
+
 # Install Rust jupyter kernel
 
 source $HOME/.cargo/env

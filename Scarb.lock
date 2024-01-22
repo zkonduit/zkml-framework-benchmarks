@@ -50,7 +50,7 @@ dependencies = [
 [[package]]
 name = "orion"
 version = "0.2.0"
-source = "git+https://github.com/gizatechxyz/orion.git?branch=develop#4d34849c342ca74d3113527f666df55994809eb3"
+source = "git+https://github.com/gizatechxyz/onnx-cairo#3cfa61067d24215a828d27e8c6a208ca3a43ec1b"
 dependencies = [
  "alexandria_data_structures",
  "alexandria_merkle_tree",

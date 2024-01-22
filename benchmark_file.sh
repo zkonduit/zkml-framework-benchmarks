@@ -40,7 +40,7 @@ for subdir in "$notebooks_dir"/*; do
                 subdir_object=$(jq -n \
                     --arg name "$notebook_name" \
                     --argjson obj "$subdir_object" \
-                    '$obj + {($name): {"provingTime": null, "memoryUsage": null}}')
+                    '$obj + {($name): {"provingTime": [], "memoryUsage": []}}')
             fi
         done
 

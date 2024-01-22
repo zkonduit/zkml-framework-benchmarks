@@ -7,4 +7,4 @@ edition = "2021"
 risc0-build = { version = "0.19.1" }
 
 [package.metadata.risc0]
-methods = ["linear_regression", "random_forest", "svm_classification"]
+methods = ["linear_regression", "random_forest", "svm_classification", "te_regression"]

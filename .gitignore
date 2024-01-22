@@ -1,11 +1,12 @@
 *.onnx
 tree_model_bytes.json
 tree_model_data_bytes.json
-*.pf
+*.key
 *.pk
 *.vk
 *.compiled
 *.cairo
+proof.json
 *settings.json
 *witness.json
 *calibration.json

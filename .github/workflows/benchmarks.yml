@@ -58,12 +58,12 @@ jobs:
       - name: Setup Virtual Env
         run: python -m venv .env; source .env/bin/activate;
       - name: Run linear regression benchmarks across all frameworks
-        run: source .env/bin/activate; cargo nextest run benchmarking_tests::tests::run_benchmarks_::tests_0 --no-capture
-      - name: Run random forest benchmarks across all frameworks
-        run: source .env/bin/activate; cargo nextest run benchmarking_tests::tests::run_benchmarks_::tests_1 --no-capture
+        run: source .env/bin/activate; cargo nextest run benchmarking_tests::tests::run_benchmarks_::tests_0 --test-threads 1
+      - name: Run randsom forest benchmarks across all frameworks
+        run: source .env/bin/activate; cargo nextest run benchmarking_tests::tests::run_benchmarks_::tests_1 --test-threads 1
       - name: Run svm classification benchmarks across all frameworks
-        run: source .env/bin/activate; cargo nextest run benchmarking_tests::tests::run_benchmarks_::tests_2 --no-capture
+        run: source .env/bin/activate; cargo nextest run benchmarking_tests::tests::run_benchmarks_::tests_2 --test-threads 1
       - name: Run tree ensemble regression benchmarks across all frameworks
-        run: source .env/bin/activate; cargo nextest run benchmarking_tests::tests::run_benchmarks_::tests_3 --no-capture
+        run: source .env/bin/activate; cargo nextest run benchmarking_tests::tests::run_benchmarks_::tests_3 --test-threads 1
       - name: Pretty Print benchmarks.json
         run: jq '.' benchmarks.json  # Pretty print the benchmarks.json file

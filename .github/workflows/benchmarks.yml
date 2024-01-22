@@ -61,5 +61,7 @@ jobs:
         run: source .env/bin/activate; cargo nextest run benchmarking_tests::tests::run_benchmarks_::tests_1 --no-capture
       - name: Run svm classification benchmarks across all frameworks
         run: source .env/bin/activate; cargo nextest run benchmarking_tests::tests::run_benchmarks_::tests_2 --no-capture
+      - name: Run tree ensemble regression benchmarks across all frameworks
+        run: source .env/bin/activate; cargo nextest run benchmarking_tests::tests::run_benchmarks_::tests_3 --no-capture
       - name: Pretty Print benchmarks.json
         run: jq '.' benchmarks.json  # Pretty print the benchmarks.json file

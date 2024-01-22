@@ -79,10 +79,11 @@ mod benchmarking_tests {
         });
     }
 
-    const TESTS: [&str; 3] = [
-        "random_forests",
+    const TESTS: [&str; 4] = [
         "linear_regressions",
         "svm_classifications",
+        "random_forests",
+        "te_regressions",
     ];
 
     macro_rules! test_func {
@@ -102,7 +103,7 @@ mod benchmarking_tests {
                     "gtime"
                 };
 
-                seq!(N in 0..=2 {
+                seq!(N in 0..=3 {
 
                     #(#[test_case(TESTS[N])])*
                     fn run_benchmarks_(test: &str) {
@@ -160,6 +161,10 @@ mod benchmarking_tests {
             .status()
             .expect("failed to execute process");
         assert!(status.success());
+        // skip orion notebook if test is random_forests
+        if test == "random_forests" {
+            return;
+        }
         let status = Command::new(python_interpreter)
             .args([
                 "-m",
@@ -219,6 +224,10 @@ mod benchmarking_tests {
     }
 
     fn run_cairo_vm(test: &str, time_cmd: &str) {
+        // if test is random_forests skip
+        if test == "random_forests" {
+            return;
+        }
         // run `scarb build`
         let status = Command::new("scarb")
             .args(["build"])

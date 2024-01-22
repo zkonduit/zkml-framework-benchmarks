@@ -17,12 +17,15 @@ use risc0_zkvm::{default_prover, ExecutorEnv};
 use serde::Serialize;
 use serde_json;
 use smartcore::{
-    ensemble::random_forest_classifier::*, linalg::basic::matrix::DenseMatrix,
-    linear::linear_regression::LinearRegression, svm::svc::SVC,
+    ensemble::{random_forest_classifier::*, random_forest_regressor::*},
+    linalg::basic::matrix::DenseMatrix,
+    linear::linear_regression::LinearRegression,
+    svm::svc::SVC,
 };
 use smartcore_ml_methods::LINEAR_REGRESSION_ELF;
 use smartcore_ml_methods::RANDOM_FOREST_ELF;
 use smartcore_ml_methods::SVM_CLASSIFICATION_ELF;
+use smartcore_ml_methods::TE_REGRESSION_ELF;
 use std::fs;
 use std::time::Instant;
 
@@ -102,6 +105,23 @@ fn main() {
                 rmp_serde::from_slice(&data_bytes).expect("data failed to deserialize byte array");
             Ok(predict(&model, data, SVM_CLASSIFICATION_ELF))
         }
+        "te_regressions" => {
+            let model_te_regression =
+                &fs::read_to_string("./res/ml-model/te_regression_model_bytes.json").unwrap();
+            let data_te_regression =
+                &fs::read_to_string("./res/input-data/te_regression_data_bytes.json").unwrap();
+            // Convert the model and input data from JSON into byte arrays.
+            let model_bytes: Vec<u8> = serde_json::from_str(model_te_regression).unwrap();
+            let data_bytes: Vec<u8> = serde_json::from_str(data_te_regression).unwrap();
+
+            // Deserialize the data from rmp into native rust types.
+            let model: RandomForestRegressor<f64, i32, DenseMatrix<f64>, Vec<i32>> =
+                rmp_serde::from_slice(&model_bytes)
+                    .expect("model failed to deserialize byte array");
+            let data: DenseMatrix<f64> =
+                rmp_serde::from_slice(&data_bytes).expect("data failed to deserialize byte array");
+            Ok(predict(&model, data, TE_REGRESSION_ELF))
+        }
         _ => {
             // return an error if the model type is not recognized
             Err("Model type not recognized")
@@ -148,6 +168,7 @@ mod test {
     use std::env;
     use std::fs;
 
+    use smartcore::ensemble::random_forest_regressor::RandomForestRegressor;
     use smartcore::{
         ensemble::random_forest_classifier::*, linalg::basic::matrix::DenseMatrix,
         linear::linear_regression::LinearRegression, svm::svc::SVC,
@@ -155,6 +176,7 @@ mod test {
     use smartcore_ml_methods::LINEAR_REGRESSION_ELF;
     use smartcore_ml_methods::RANDOM_FOREST_ELF;
     use smartcore_ml_methods::SVM_CLASSIFICATION_ELF;
+    use smartcore_ml_methods::TE_REGRESSION_ELF;
 
     #[test]
     fn linear_regression() {
@@ -224,5 +246,24 @@ mod test {
         // convert result.0 to a Vec<i32>
         let result: Vec<i32> = result.0.iter().map(|x| *x as i32).collect();
         assert_eq!(EXPECTED, result);
+    }
+    #[test]
+    fn te_regression() {
+        let model_te_regression =
+            &fs::read_to_string("./res/ml-model/te_regression_model_bytes.json").unwrap();
+        let data_te_regression =
+            &fs::read_to_string("./res/input-data/te_regression_data_bytes.json").unwrap();
+        const EXPECTED: &[u32] = &[11];
+
+        let model_bytes: Vec<u8> = serde_json::from_str(model_te_regression).unwrap();
+        let data_bytes: Vec<u8> = serde_json::from_str(data_te_regression).unwrap();
+
+        // Deserialize the data from rmp into native rust types.
+        let model: RandomForestRegressor<f64, u32, DenseMatrix<f64>, Vec<u32>> =
+            rmp_serde::from_slice(&model_bytes).expect("model failed to deserialize byte array");
+        let data: DenseMatrix<f64> =
+            rmp_serde::from_slice(&data_bytes).expect("data failed to deserialize byte array");
+        let result = super::predict(&model, data, TE_REGRESSION_ELF);
+        assert_eq!(EXPECTED, result.0);
     }
 }

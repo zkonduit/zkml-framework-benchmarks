@@ -81,8 +81,8 @@ mod benchmarking_tests {
 
     const TESTS: [&str; 4] = [
         "linear_regressions",
-        "svm_classifications",
         "random_forests",
+        "svm_classifications",
         "te_regressions",
     ];
 

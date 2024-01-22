@@ -48,6 +48,8 @@ jobs:
           evcxr_jupyter --install
       - name: Install GNU Time
         run: sudo apt-get update && sudo apt-get install -y time
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
       - name: Download and Install EZKL Binary
         run: |
           curl -L -o ezkl.tar.gz https://github.com/zkonduit/ezkl/releases/download/v7.1.4/build-artifacts.ezkl-linux-gnu.tar.gz
@@ -55,13 +57,13 @@ jobs:
           sudo mv ezkl /usr/local/bin/  # Move the binary to a directory in your PATH
       - name: Setup Virtual Env
         run: python -m venv .env; source .env/bin/activate;
-      - name: Run random forest benchmarks across all frameworks
-        run: source .env/bin/activate; cargo nextest run benchmarking_tests::tests::run_benchmarks_::tests_0 --no-capture
       - name: Run linear regression benchmarks across all frameworks
-        run: source .env/bin/activate; cargo nextest run benchmarking_tests::tests::run_benchmarks_::tests_1 --no-capture
+        run: source .env/bin/activate; cargo nextest run benchmarking_tests::tests::run_benchmarks_::tests_0 --test-threads 1
+      - name: Run randsom forest benchmarks across all frameworks
+        run: source .env/bin/activate; cargo nextest run benchmarking_tests::tests::run_benchmarks_::tests_1 --test-threads 1
       - name: Run svm classification benchmarks across all frameworks
-        run: source .env/bin/activate; cargo nextest run benchmarking_tests::tests::run_benchmarks_::tests_2 --no-capture
+        run: source .env/bin/activate; cargo nextest run benchmarking_tests::tests::run_benchmarks_::tests_2 --test-threads 1
       - name: Run tree ensemble regression benchmarks across all frameworks
-        run: source .env/bin/activate; cargo nextest run benchmarking_tests::tests::run_benchmarks_::tests_3 --no-capture
+        run: source .env/bin/activate; cargo nextest run benchmarking_tests::tests::run_benchmarks_::tests_3 --test-threads 1
       - name: Pretty Print benchmarks.json
         run: jq '.' benchmarks.json  # Pretty print the benchmarks.json file
